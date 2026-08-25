@@ -7,8 +7,9 @@
 
 ## Done
 
-- (feature/fix name) — brief note, date
+- rag-pipeline — core pipeline bootstrapped end-to-end (FastAPI app, ChromaDB store wrapper, chunker/ingestion, retriever, Groq chain, facade, dev query route); deterministic 12-doc test corpus generator; unit suite written; ADRs 0002–0003; TBDs resolved in tech-stack.md — 2026-08-25. NOTE: pytest/ruff/black not yet executed (no shell in that agent session).
 
 ## In progress
 
-- (feature/fix name) — status
+- (nothing currently in motion)
+

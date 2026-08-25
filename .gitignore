@@ -5,6 +5,14 @@
 *.pem
 *.key
 
+# Python virtualenvs & tooling caches
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Local vector store (ChromaDB persistence)
+chroma_db/
+
 # Dependencies
 node_modules/
 venv/
@@ -26,3 +34,4 @@ coverage/
 # Logs
 *.log
 npm-debug.log*
+

@@ -26,18 +26,17 @@ project-root/
 │   │   │   └── schemas/
 │   │   ├── services/
 │   │   │   ├── rag/
-│   │   │   ├── access_control/
-│   │   │   ├── conversation/
+│   │   │   ├── access_control/   (future — item 2)
+│   │   │   ├── conversation/     (future)
 │   │   │   └── llm/
-│   │   ├── models/
-│   │   ├── database/
+│   │   ├── models/               (future)
+│   │   ├── database/             (future — Supabase)
 │   │   ├── vectorstore/
-│   │   ├── utils/
+│   │   ├── utils/                (future)
 │   │   └── config/
-│   ├── tests/
-│   └── requirements.txt
+│   └── tests/
 │
-├── frontend/
+├── frontend/                     (future)
 │   ├── src/
 │   │   ├── components/
 │   │   ├── pages/
@@ -46,13 +45,19 @@ project-root/
 │   └── package.json
 │
 ├── documents/
+│   ├── generate_test_documents.py
 │   └── generated_test_documents/
 │
 ├── .clinerules/
 │
+# NOTE (ADR-0003): requirements.txt and pyproject.toml live at the REPO ROOT,
+# not under backend/, because CI commands run from the workspace root.
+├── requirements.txt
+├── pyproject.toml
 ├── .env.example
 ├── tech-stack.md
 ├── architecture.md
 ├── projectBrief.md
 ├── AGENTS.md
 └── ROADMAP.md
+```

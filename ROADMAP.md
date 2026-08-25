@@ -2,11 +2,8 @@
 
 ## Now
 
-### 1. Build the RAG Pipeline
-- Build the core RAG pipeline.
-- Use generated company-style internal documents for testing.
-- Store and retrieve documents through ChromaDB.
-- Generate responses using LangChain and the specified Groq Qwen 27B model.
+### 1. Build the RAG Pipeline — ✅ DONE (2026-08-25, branch `feature/rag-pipeline`)
+Implemented: ChromaDB-backed ingestion/retrieval, LangChain + Groq generation chain, FastAPI facade with dev-only query stub, generated company-style test corpus (12 docs × 4 tiers). See memory-bank/progress.md and ADRs 0002–0003.
 
 ### 2. Implement Access Control
 - Support user identification through user ID.

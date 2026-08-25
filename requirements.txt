@@ -1,0 +1,14 @@
+# Runtime dependencies (version ranges pinned per CI compatibility)
+fastapi>=0.115,<1
+uvicorn[standard]>=0.30,<1
+langchain-core>=0.3,<0.5
+langchain-groq>=0.2,<0.5
+chromadb>=0.5,<2
+pydantic>=2.7,<3
+pydantic-settings>=2.3,<3
+
+# Test / dev tooling (CI runs ruff, black and pytest from this single file)
+httpx>=0.27,<1
+pytest>=8.0,<9
+ruff>=0.6
+black>=24.8

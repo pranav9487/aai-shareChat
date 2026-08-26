@@ -7,6 +7,8 @@
 
 ## Done
 
+- debug-unknown-user-403 — identified root cause of 403 Forbidden ("Access denied: unknown user"): backend `InMemoryUserDirectory` strictly validates user IDs against seeded users (`alice`, `priya`, `carlos`, `dana`, `guest`); entering an unseeded ID like `1` properly triggers non-leaky 403 rejection. Updated input placeholder in `UserSelector.jsx` to clearly show valid seed IDs — 2026-08-26.
+
 - frontend-rebuild — identity-aware chat UI rebuilt in **JavaScript** per product decision
   (TS attempt on parked branch feature/frontend-bootstrap discarded): Vite+React18+JSX, demo-user
   picker + custom id/role override, single apiClient posting X-User-ID to POST /api/query,

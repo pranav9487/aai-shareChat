@@ -10,9 +10,9 @@ Implemented: `X-User-ID` identity resolved through a pluggable `UserDirectory` (
 optional `ACCESS_CONTROL_SEED_JSON`), role→tier RBAC enforced inside the ChromaDB `where` filter,
 canonical security-decline vs not-found answers, authenticated `POST /api/query` replacing the
 pre-auth dev stub. See ADR-0004.
-- Support user identification through user ID.
-- Apply role-based access control.
-- Ensure users only receive information they are permitted to access.
+- [x] Support user identification through user ID.
+- [x] Apply role-based access control.
+- [x] Ensure users only receive information they are permitted to access.
 
 ### 3. Implement Shared-Session Safety
 - Support multiple users in a shared session.
@@ -34,11 +34,11 @@ id/role override, an identity-aware chat that posts to `POST /api/query` with th
 header, distinct rendering for security-based declines, and a per-session `session_id` already
 carried in every request (dormant until Next-v2 Supabase). Gates: ESLint clean, 16 offline
 Vitest/RTL tests, vite build; dev proxy removes any CORS need on the backend.
-* Create a user selection screen for test users.
-* Create the chat interface.
-* Allow users to select or provide their `user_id` and role.
-* Send the `user_id`, role, `session_id`, and message to the FastAPI backend.
-* Display AI responses and security-based responses in the chat.
+- [x] Create a user selection screen for test users.
+- [x] Create the chat interface.
+- [x] Allow users to select or provide their `user_id` and role.
+- [x] Send the `user_id`, role, `session_id`, and message to the FastAPI backend.
+- [x] Display AI responses and security-based responses in the chat.
 
 #### v2. Integrate Supabase
 

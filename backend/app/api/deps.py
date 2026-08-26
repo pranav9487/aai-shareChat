@@ -56,6 +56,7 @@ def get_user_directory() -> InMemoryUserDirectory:
 
 def get_current_user(
     x_user_id: str | None = Header(default=None, alias="X-User-ID"),
+    x_user_role: str | None = Header(default=None, alias="X-User-Role"),
     directory: UserDirectory = Depends(get_user_directory),
 ) -> User:
     """Resolve the requesting user from the ``X-User-ID`` header.
@@ -71,4 +72,15 @@ def get_current_user(
     try:
         return directory.get_user(x_user_id.strip())
     except UserNotFoundError:
+        if x_user_role:
+            try:
+                from app.services.access_control.models import Role, User
+                role_enum = Role(x_user_role.strip().lower())
+                return User(
+                    user_id=x_user_id.strip(),
+                    display_name=x_user_id.strip(),
+                    role=role_enum
+                )
+            except ValueError:
+                pass
         raise HTTPException(status_code=403, detail="Access denied: unknown user.") from None

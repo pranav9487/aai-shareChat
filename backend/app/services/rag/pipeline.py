@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable, Sequence
+from collections.abc import Callable, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -62,4 +62,5 @@ class RAGPipeline:
         if not isinstance(answer, str) or not answer.strip():
             raise PipelineError("generator returned an empty or non-string answer")
 
-        return QueryResult(answer=answer.strip(), sources=[dict(chunk.metadata) for chunk in chunks])
+        sources = [dict(chunk.metadata) for chunk in chunks]
+        return QueryResult(answer=answer.strip(), sources=sources)

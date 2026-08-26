@@ -5,11 +5,10 @@ from __future__ import annotations
 from collections.abc import Iterator
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.api.deps import get_pipeline
 from app.main import app
 from app.services.rag.pipeline import PipelineError, QueryResult
+from fastapi.testclient import TestClient
 
 
 class FakePipeline:
@@ -47,7 +46,9 @@ def test_health_endpoint(client: TestClient) -> None:
 
 
 def test_query_happy_path(client: TestClient, fake_pipeline: FakePipeline) -> None:
-    fake_pipeline.result = QueryResult(answer="25 days", sources=[{"source": "hr_vacation_policy.md"}])
+    fake_pipeline.result = QueryResult(
+        answer="25 days", sources=[{"source": "hr_vacation_policy.md"}]
+    )
     response = client.post("/api/dev/query", json={"question": "vacation days?"})
     assert response.status_code == 200
     body = response.json()

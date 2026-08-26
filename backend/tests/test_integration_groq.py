@@ -28,6 +28,7 @@ def test_full_roundtrip_with_real_components(tmp_path: Path) -> None:
     from app.services.rag.pipeline import RAGPipeline
     from app.services.rag.retriever import Retriever
     from app.vectorstore.chroma_client import ChromaVectorStore
+
     from documents.generate_test_documents import write_documents
 
     docs_dir = tmp_path / "docs"
@@ -49,9 +50,9 @@ def test_full_roundtrip_with_real_components(tmp_path: Path) -> None:
     retriever = Retriever(store, top_k=5)
     hits = retriever.retrieve("How many vacation days do full time employees accrue per year?")
     assert hits, "expected retrieval hits after ingestion"
-    assert any(chunk.metadata["access_level"] == "hr" for chunk in hits), (
-        f"expected an hr-tier hit, got levels: {[c.metadata['access_level'] for c in hits]}"
-    )
+    assert any(
+        chunk.metadata["access_level"] == "hr" for chunk in hits
+    ), f"expected an hr-tier hit, got levels: {[c.metadata['access_level'] for c in hits]}"
 
     pipeline = RAGPipeline(retriever=retriever, generate=make_generate(settings=settings))
     result = pipeline.query("How many vacation days do full-time employees accrue per year?")
@@ -66,6 +67,7 @@ def test_idempotent_reingest_real_store(tmp_path: Path) -> None:
     from app.config.settings import Settings
     from app.services.rag.ingestion import IngestionService
     from app.vectorstore.chroma_client import ChromaVectorStore
+
     from documents.generate_test_documents import write_documents
 
     docs_dir = tmp_path / "docs"

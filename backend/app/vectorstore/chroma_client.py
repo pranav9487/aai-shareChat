@@ -8,8 +8,8 @@ deterministic fake instead of downloading the real embedding model.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Sequence
 from pathlib import Path
-from typing import Callable, Sequence
 
 import chromadb
 from pydantic import BaseModel, Field
@@ -43,7 +43,9 @@ class DefaultEmbedder:
         return [[float(x) for x in vec] for vec in self._fn(list(texts))]
 
 
-def _require_equal_lengths(texts: Sequence[str], metadatas: Sequence[dict], ids: Sequence[str]) -> None:
+def _require_equal_lengths(
+    texts: Sequence[str], metadatas: Sequence[dict], ids: Sequence[str]
+) -> None:
     if not (len(texts) == len(metadatas) == len(ids)):
         raise ValueError(
             f"length mismatch: texts={len(texts)} metadatas={len(metadatas)} ids={len(ids)}"
@@ -70,7 +72,9 @@ class ChromaVectorStore:
         """Delete every chunk that came from ``source`` (idempotent)."""
         self._collection.delete(where={"source": source})
 
-    def upsert_chunks(self, texts: Sequence[str], metadatas: Sequence[dict], ids: Sequence[str]) -> int:
+    def upsert_chunks(
+        self, texts: Sequence[str], metadatas: Sequence[dict], ids: Sequence[str]
+    ) -> int:
         """Upsert chunks (with pre-computed metadata) and return how many were written.
 
         Embeddings are computed via the configured ``embed_fn`` and passed to
@@ -102,7 +106,7 @@ class ChromaVectorStore:
         distances = result.get("distances", [[]])[0]
         return [
             RetrievedChunk(text=doc, metadata=dict(meta), distance=float(dist))
-            for doc, meta, dist in zip(documents, metadatas, distances)
+            for doc, meta, dist in zip(documents, metadatas, distances, strict=True)
         ]
 
     def count(self) -> int:

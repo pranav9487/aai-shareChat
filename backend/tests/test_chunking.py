@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app.services.rag.ingestion import chunk_text
 
 
@@ -35,10 +34,10 @@ def test_consecutive_chunks_share_words_when_overlap_positive() -> None:
     text = ". ".join(f"word{i}" for i in range(300))
     chunks = chunk_text(text, chunk_size=120, chunk_overlap=30)
     assert len(chunks) >= 2
-    for prev_chunk, next_chunk in zip(chunks, chunks[1:]):
-        assert set(prev_chunk.split()) & set(next_chunk.split()), (
-            f"no shared words between consecutive chunks:\n{prev_chunk!r}\n{next_chunk!r}"
-        )
+    for prev_chunk, next_chunk in zip(chunks, chunks[1:], strict=False):
+        assert set(prev_chunk.split()) & set(
+            next_chunk.split()
+        ), f"no shared words between consecutive chunks:\n{prev_chunk!r}\n{next_chunk!r}"
 
 
 def test_unicode_content_is_preserved() -> None:

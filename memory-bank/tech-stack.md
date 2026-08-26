@@ -49,9 +49,11 @@
 ## Commands
 
 ### Backend
-- Development command: `uvicorn backend.app.main:app --reload`
+Run inside the repo `.venv` (global site-packages conflict with pinned langchain-core).
+- Development command: `uvicorn app.main:app --reload --app-dir backend`
 - Build command: TBD (not applicable yet)
-- Run command: `uvicorn backend.app.main:app --host 0.0.0.0 --port 8000`
+- Run command: `uvicorn app.main:app --host 0.0.0.0 --port 8000 --app-dir backend`
+  (NOTE: the previously documented `backend.app.main:app` target could never import — fixed.)
 
 ### Frontend
 - Development command: TBD
@@ -74,6 +76,7 @@ Expected values include:
 - Groq model id (`GROQ_MODEL`)
 - ChromaDB persistence dir (`CHROMA_PERSIST_DIR`)
 - Documents dir (`DOCUMENTS_DIR`)
+- Optional user-registry seed JSON (`ACCESS_CONTROL_SEED_JSON`) — ADR-0004
 - Supabase URL / keys (future items)
 - Any other future service credentials
 

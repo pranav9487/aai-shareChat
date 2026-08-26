@@ -6,9 +6,14 @@
 - Agent/RAG framework: LangChain (`langchain-core` + `langchain-groq`; see ADR-0003)
 
 ## Frontend
-- Language: JavaScript/TypeScript: TBD
-- Framework: React
-- Version: TBD
+- Language: JavaScript + JSX (light JSDoc; see ADR-0005 — supersedes the
+  abandoned TypeScript attempt on parked branch feature/frontend-bootstrap)
+- Framework: React 18
+- Build tool: Vite (@vitejs/plugin-react)
+- Testing: Vitest + React Testing Library + jsdom (`npm test`)
+- Lint gate: ESLint 9 flat config (js-recommended + react-hooks; `npm run lint`)
+- Dev proxy: `/api` → `http://127.0.0.1:8000` configured in `vite.config.js`,
+  so the FastAPI backend needs no CORS settings
 
 ## LLM
 - Provider: Groq
@@ -44,7 +49,7 @@
 
 ## Package Management
 - Python package manager: pip + `requirements.txt` at repo root (ADR-0003)
-- Frontend package manager: TBD
+- Frontend package manager: npm, lockfile committed (`frontend/package-lock.json`; ADR-0005)
 
 ## Commands
 
@@ -56,9 +61,11 @@ Run inside the repo `.venv` (global site-packages conflict with pinned langchain
   (NOTE: the previously documented `backend.app.main:app` target could never import — fixed.)
 
 ### Frontend
-- Development command: TBD
-- Build command: TBD
-- Run command: TBD
+Run inside `frontend/`; requires the FastAPI backend on port 8000 for live data.
+- Development command: `npm run dev` (Vite on :5173, proxies `/api` to :8000)
+- Build command: `npm run build` (vite build → `dist/`)
+- Lint command: `npm run lint` (ESLint flat config)
+- Test command: `npm test` (vitest run, jsdom, offline)
 
 ### Testing
 - Test command: `pytest`

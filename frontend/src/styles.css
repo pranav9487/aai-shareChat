@@ -1,0 +1,180 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #10141a;
+  color: #e6e9ef;
+}
+
+.app {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.tagline {
+  margin: 0.25rem 0 0;
+  color: #93a1b5;
+}
+
+.panel {
+  background: #171d26;
+  border: 1px solid #232c39;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.panel h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.user-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.user-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.6rem;
+  border: 1px solid #2b3648;
+  background: #1d2530;
+  color: inherit;
+  cursor: pointer;
+}
+
+.user-chip:hover {
+  border-color: #4f7cd1;
+}
+
+.user-chip.selected {
+  border-color: #4f7cd1;
+  background: #21304a;
+}
+
+.role-badge {
+  font-size: 0.75rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: #2b3648;
+  color: #aebccd;
+}
+
+.custom-identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+input,
+select {
+  background: #10151d;
+  color: inherit;
+  border: 1px solid #2b3648;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.identity-status {
+  margin: 0.75rem 0 0;
+}
+
+.muted {
+  color: #8494ab;
+}
+
+.chat-window .message-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.message {
+  max-width: 85%;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.7rem;
+  overflow-wrap: anywhere;
+}
+
+.user-message {
+  align-self: flex-end;
+  background: #2c4a86;
+}
+
+.assistant-message {
+  align-self: flex-start;
+  background: #222b38;
+}
+
+.message.denied {
+  border: 1px solid #b3423f;
+  background: #33201f;
+}
+
+.notice-label {
+  display: block;
+  color: #ff9b98;
+  margin-bottom: 0.25rem;
+}
+
+.message.error {
+  border: 1px solid #a06a1d;
+  background: #33291a;
+}
+
+.chat-input {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chat-input input {
+  flex: 1;
+}
+
+button[type="submit"],
+.custom-identity button[type="submit"] {
+  background: #3563b8;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.empty-hint {
+  margin: 0;
+}
+
+.app-footer code {
+  font-size: 0.75rem;
+}

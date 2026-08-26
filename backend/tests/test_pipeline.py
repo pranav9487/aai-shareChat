@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import cast
 
 import pytest
-
 from app.services.rag.pipeline import NOT_FOUND_ANSWER, PipelineError, RAGPipeline
 from app.vectorstore.chroma_client import RetrievedChunk
 
@@ -32,12 +32,19 @@ class RecordingGenerator:
         self.calls.append((question, len(chunks)))
         if self.error is not None:
             raise self.error
-        assert isinstance(self.answer, str)  # narrows type for mypy/ruff
-        return self.answer
+        # No isinstance assert here: a deliberately non-str answer must reach
+        # the pipeline's own validation so it raises the domain error.
+        return cast(str, self.answer)
 
 
-def make_chunk(source: str = "s.md", level: str = "general") -> RetrievedChunk:
-    return RetrievedChunk(text="chunk text", metadata={"source": source, "access_level": level})
+def make_chunk(
+    source: str = "s.md", level: str = "general", distance: float = 0.2
+) -> RetrievedChunk:
+    return RetrievedChunk(
+        text="chunk text",
+        metadata={"source": source, "access_level": level},
+        distance=distance,
+    )
 
 
 def test_blank_question_raises_value_error() -> None:

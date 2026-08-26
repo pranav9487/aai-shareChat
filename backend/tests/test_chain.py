@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import pytest
-from langchain_core.messages import AIMessage
-from langchain_core.runnables import RunnableLambda
-
 from app.config.settings import Settings
 from app.services.llm.groq_chain import GenerationError, format_context, make_generate
 from app.vectorstore.chroma_client import RetrievedChunk
+from langchain_core.messages import AIMessage
+from langchain_core.runnables import RunnableLambda
 
 
 class EchoLLM(RunnableLambda):
@@ -27,10 +26,12 @@ CHUNKS = [
     RetrievedChunk(
         text="Employees accrue 25 vacation days.",
         metadata={"source": "hr_vacation_policy.md", "access_level": "hr"},
+        distance=0.12,
     ),
     RetrievedChunk(
         text="Helpdesk handles password resets.",
         metadata={"source": "general_it_helpdesk.md", "access_level": "general"},
+        distance=0.34,
     ),
 ]
 

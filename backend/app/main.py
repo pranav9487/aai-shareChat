@@ -13,11 +13,13 @@ from app.api.routes.query import router as query_router
 
 app = FastAPI(
     title="aai-share-chat backend",
-    version="0.1.0",
-    description="Secure employee RAG chat — core pipeline (roadmap item 1).",
+    version="0.2.0",
+    description=(
+        "Secure employee RAG chat — authenticated, permission-filtered "
+        "document queries (roadmap items 1–2)."
+    ),
 )
 
-# PRE-AUTH DEV STUB router — replaced by items 2–3.
 app.include_router(query_router)
 
 

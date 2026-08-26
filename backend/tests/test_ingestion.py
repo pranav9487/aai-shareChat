@@ -5,13 +5,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from app.config.settings import Settings
 from app.services.rag.ingestion import (
     IngestionService,
     ParsedDocument,
     parse_markdown_document,
 )
+
 from documents.generate_test_documents import DOCUMENTS, build_markdown, write_documents
 
 MULTI_CHUNK_TEXT = "".join(
@@ -62,7 +62,9 @@ def test_parse_happy_path(tmp_path: Path) -> None:
 
 def test_ingest_is_idempotent(store, tmp_path: Path) -> None:
     service = IngestionService(store, make_settings(tmp_path))
-    doc = ParsedDocument(source="big.md", title="Big", access_level="general", text=MULTI_CHUNK_TEXT)
+    doc = ParsedDocument(
+        source="big.md", title="Big", access_level="general", text=MULTI_CHUNK_TEXT
+    )
     first_count = service.ingest_text(doc)
     assert first_count >= 2, "test text should produce multiple chunks"
 
@@ -104,10 +106,13 @@ def test_ingest_directory_ingests_all_generated_documents(store, tmp_path: Path)
 
 def test_ingest_directory_collects_errors_without_aborting(store, tmp_path: Path) -> None:
     docs_dir = tmp_path / "docs"
+    docs_dir.mkdir(parents=True)
     good = docs_dir / "good.md"
     bad = docs_dir / "bad.md"
     empty = docs_dir / "empty.md"
-    good.write_text(build_markdown("Good", "general", "Useful general content here."), encoding="utf-8")
+    good.write_text(
+        build_markdown("Good", "general", "Useful general content here."), encoding="utf-8"
+    )
     bad.write_text("no front matter at all", encoding="utf-8")
     empty.write_text(build_markdown("Empty", "restricted", ""), encoding="utf-8")
 

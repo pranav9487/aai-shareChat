@@ -14,6 +14,11 @@ extend-exclude = ["chroma_db", "documents/generated_test_documents"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
 
+[tool.ruff.lint.per-file-ignores]
+# FastAPI's canonical dependency-injection pattern puts Depends(...) in
+# parameter defaults; flagging it (B008) is noise for route modules.
+"backend/app/api/**" = ["B008"]
+
 [tool.black]
 line-length = 100
 target-version = ["py311"]

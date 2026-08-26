@@ -35,7 +35,8 @@ def chunk_text(text: str, *, chunk_size: int = 800, chunk_overlap: int = 100) ->
         raise ValueError(f"chunk_size must be positive, got {chunk_size}")
     if not 0 <= chunk_overlap < chunk_size:
         raise ValueError(
-            f"chunk_overlap must satisfy 0 <= overlap < size, got {chunk_overlap} for size {chunk_size}"
+            "chunk_overlap must satisfy 0 <= overlap < size, "
+            f"got {chunk_overlap} for size {chunk_size}"
         )
     cleaned = text.strip()
     if not cleaned:

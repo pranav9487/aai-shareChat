@@ -10,7 +10,6 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
-
 from app.vectorstore.chroma_client import ChromaVectorStore
 
 _DIM = 64

@@ -163,4 +163,3 @@ if __name__ == "__main__":
     destination = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_OUTPUT_DIR
     paths = write_documents(destination)
     print(f"Wrote {len(paths)} documents to {destination}")
-

@@ -26,7 +26,7 @@ project-root/
 │   │   │   └── schemas/
 │   │   ├── services/
 │   │   │   ├── rag/
-│   │   │   ├── access_control/   (future — item 2)
+│   │   │   ├── access_control/  (item 2 — implemented: models, directory)
 │   │   │   ├── conversation/     (future)
 │   │   │   └── llm/
 │   │   ├── models/               (future)

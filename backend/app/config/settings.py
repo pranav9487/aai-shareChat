@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     chunk_overlap: int = 100
     retrieval_top_k: int = 5
 
+    # --- Access control (ADR-0004) ---
+    # Optional JSON seed overriding the built-in demo user registry:
+    # '[{"user_id": "alice", "display_name": "Alice", "role": "employee"}, ...]'
+    access_control_seed_json: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

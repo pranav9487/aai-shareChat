@@ -92,13 +92,28 @@ class ChromaVectorStore:
         )
         return len(texts)
 
-    def query(self, query_text: str, top_k: int) -> list[RetrievedChunk]:
-        """Return the ``top_k`` most similar chunks, closest first."""
+    def query(
+        self, query_text: str, top_k: int, allowed_levels: Sequence[str] | None = None
+    ) -> list[RetrievedChunk]:
+        """Return the ``top_k`` most similar chunks, closest first.
+
+        When *allowed_levels* is given, only chunks whose stored
+        ``access_level`` metadata appears in that list are eligible (Chroma
+        server-side ``where`` filter), so forbidden chunks never leave the
+        store. An empty *allowed_levels* list denies everything without
+        querying.
+        """
         if top_k <= 0:
             raise ValueError(f"top_k must be a positive integer, got {top_k}")
+        if allowed_levels is not None and not allowed_levels:
+            return []
+        where = (
+            {"access_level": {"$in": list(allowed_levels)}} if allowed_levels is not None else None
+        )
         result = self._collection.query(
             query_embeddings=[list(vec) for vec in self._embed_fn([query_text])],
             n_results=top_k,
+            where=where,
             include=["documents", "metadatas", "distances"],
         )
         documents = result.get("documents", [[]])[0]

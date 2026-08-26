@@ -1,10 +1,14 @@
-"""FastAPI dependency providers (single composition root for the pipeline)."""
+"""FastAPI dependency providers (composition root for pipeline + identity)."""
 
 from __future__ import annotations
 
 from functools import lru_cache
 
+from fastapi import Depends, Header, HTTPException
+
 from app.config.settings import get_settings
+from app.services.access_control import User, UserDirectory, UserNotFoundError
+from app.services.access_control.directory import InMemoryUserDirectory, build_directory
 from app.services.llm.groq_chain import make_generate
 from app.services.rag.pipeline import RAGPipeline
 from app.services.rag.retriever import Retriever
@@ -25,3 +29,29 @@ def get_pipeline() -> RAGPipeline:
     )
     retriever = Retriever(store, top_k=settings.retrieval_top_k)
     return RAGPipeline(retriever=retriever, generate=make_generate(settings=settings))
+
+
+@lru_cache
+def get_user_directory() -> InMemoryUserDirectory:
+    """Build the user directory once per process (ADR-0004)."""
+    return build_directory(get_settings().access_control_seed_json)
+
+
+def get_current_user(
+    x_user_id: str | None = Header(default=None, alias="X-User-ID"),
+    directory: UserDirectory = Depends(get_user_directory),
+) -> User:
+    """Resolve the requesting user from the ``X-User-ID`` header.
+
+    Failure responses are deliberately non-leaky: a missing header and an
+    unknown ID produce fixed messages that never confirm which IDs exist.
+    """
+    if not x_user_id or not x_user_id.strip():
+        raise HTTPException(
+            status_code=401,
+            detail="Request must identify the user via the X-User-ID header.",
+        )
+    try:
+        return directory.get_user(x_user_id.strip())
+    except UserNotFoundError:
+        raise HTTPException(status_code=403, detail="Access denied: unknown user.") from None

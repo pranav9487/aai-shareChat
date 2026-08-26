@@ -25,7 +25,7 @@ def test_full_roundtrip_with_real_components(tmp_path: Path) -> None:
     from app.config.settings import Settings
     from app.services.llm.groq_chain import make_generate
     from app.services.rag.ingestion import IngestionService
-    from app.services.rag.pipeline import RAGPipeline
+    from app.services.rag.pipeline import ACCESS_DENIED_ANSWER, RAGPipeline
     from app.services.rag.retriever import Retriever
     from app.vectorstore.chroma_client import ChromaVectorStore
 
@@ -60,6 +60,15 @@ def test_full_roundtrip_with_real_components(tmp_path: Path) -> None:
     assert isinstance(result.answer, str)
     assert result.answer.strip()
     assert result.sources, "grounded answers must cite their sources"
+
+    # Roadmap item 2: an employee-tier filter over hr-only matches must yield
+    # the canonical security decline, never content and never empty-sources.
+    restricted = pipeline.query(
+        "How many vacation days do full-time employees accrue per year?",
+        allowed_levels=["general"],
+    )
+    assert restricted.answer == ACCESS_DENIED_ANSWER
+    assert restricted.sources == []
 
 
 @_requires_key

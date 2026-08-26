@@ -70,3 +70,45 @@ def test_results_are_ordered_nearest_first_and_tier_matches_topic(store) -> None
     hr_sources = [c for c in results if c.metadata["access_level"] == "hr"]
     assert hr_sources, "expected an hr-tier document among the hits"
     assert results[0].metadata["source"].startswith(("vacation", "hr_"))
+
+
+def test_allowed_levels_general_excludes_hr_document(store) -> None:
+    vacation_source, helpdesk_source = _ingest_pair(store)
+    retriever = Retriever(store, top_k=10)
+
+    results = retriever.retrieve("vacation days accrual helpdesk", allowed_levels=["general"])
+
+    assert results, "general-tier material must remain reachable"
+    seen_sources = {c.metadata["source"] for c in results}
+    assert vacation_source not in seen_sources, "hr document leaked through a general-only filter"
+    assert seen_sources == {helpdesk_source}
+
+
+def test_allowed_levels_hr_excludes_general_document(store) -> None:
+    vacation_source, helpdesk_source = _ingest_pair(store)
+    retriever = Retriever(store, top_k=10)
+
+    results = retriever.retrieve("vacation days accrual helpdesk", allowed_levels=["hr"])
+
+    seen_sources = {c.metadata["source"] for c in results}
+    assert helpdesk_source not in seen_sources, "general document leaked through an hr-only filter"
+    assert seen_sources == {vacation_source}
+
+
+def test_unknown_tier_filter_returns_nothing(store) -> None:
+    _ingest_pair(store)
+    retriever = Retriever(store, top_k=5)
+    assert retriever.retrieve("anything", allowed_levels=["management"]) == []
+
+
+def test_empty_allowed_levels_denies_everything_without_querying(store) -> None:
+    _ingest_pair(store)
+    retriever = Retriever(store, top_k=5)
+    assert retriever.retrieve("vacation", allowed_levels=[]) == []
+
+
+def test_none_allowed_levels_means_unfiltered(store) -> None:
+    vacation_source, helpdesk_source = _ingest_pair(store)
+    results = Retriever(store, top_k=10).retrieve("vacation days")
+    seen_sources = {c.metadata["source"] for c in results}
+    assert {vacation_source, helpdesk_source} <= seen_sources

@@ -10,6 +10,7 @@ from app.services.rag.retriever import Retriever
 from app.vectorstore.chroma_client import RetrievedChunk
 
 NOT_FOUND_ANSWER = "The answer was not found in the documents."
+ACCESS_DENIED_ANSWER = "Access denied: you do not have permission to view this information."
 
 
 class QueryResult(BaseModel):
@@ -38,21 +39,28 @@ class RAGPipeline:
         self._retriever = retriever
         self._generate = generate
 
-    def query(self, question: str) -> QueryResult:
-        """Answer *question* from ingested documents.
+    def query(self, question: str, allowed_levels: Sequence[str] | None = None) -> QueryResult:
+        """Answer *question* from ingested documents visible at *allowed_levels*.
 
-        Empty questions raise ``ValueError``. When nothing relevant is stored,
-        the canonical :data:`NOT_FOUND_ANSWER` is returned without calling the
-        LLM, so unanswerable queries stay cheap and deterministic.
+        Empty questions raise ``ValueError``. ``allowed_levels=None`` means no
+        restriction (internal callers/tests only). When permission-filtered
+        retrieval comes back empty, one internal unfiltered existence probe
+        (its content is discarded) picks between the canonical security
+        decline :data:`ACCESS_DENIED_ANSWER` — relevant material exists outside
+        the caller's tiers — and :data:`NOT_FOUND_ANSWER`. The LLM is never
+        called in either branch, and denied sources are never exposed.
         """
         if not question or not question.strip():
             raise ValueError("question must be a non-empty string")
         cleaned = question.strip()
 
-        chunks = self._retriever.retrieve(cleaned)
-        # TODO(item-2): per-user access filtering happens inside the Retriever;
-        # this facade must stay role-agnostic.
+        chunks = self._retriever.retrieve(cleaned, allowed_levels=allowed_levels)
         if not chunks:
+            if allowed_levels is None:
+                return QueryResult(answer=NOT_FOUND_ANSWER, sources=[])
+            unfiltered = self._retriever.retrieve(cleaned)
+            if unfiltered:
+                return QueryResult(answer=ACCESS_DENIED_ANSWER, sources=[])
             return QueryResult(answer=NOT_FOUND_ANSWER, sources=[])
 
         try:

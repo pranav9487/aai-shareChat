@@ -118,6 +118,55 @@ def test_ingest_directory_collects_errors_without_aborting(store, tmp_path: Path
 
     summary = IngestionService(store, make_settings(tmp_path)).ingest_directory(docs_dir)
     assert summary["files"] == 1
+
+
+def test_ensure_corpus_populates_empty_store_then_noops(store, tmp_path: Path) -> None:
+    from app.config.settings import Settings
+    from app.services.rag.ingestion import ensure_corpus
+
+    docs_dir = tmp_path / "docs"
+    write_documents(docs_dir)
+    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=docs_dir)
+
+    first = ensure_corpus(store, settings)
+    assert first is not None
+    assert first["files"] == len(DOCUMENTS) == 12
+    populated_count = store.count()
+    assert populated_count >= 12
+
+    second = ensure_corpus(store, settings)
+    assert second is None, "populated store must never be re-ingested by auto-provisioning"
+    assert store.count() == populated_count
+
+
+def test_ensure_corpus_skips_when_docs_dir_missing(store, tmp_path: Path) -> None:
+    from app.config.settings import Settings
+    from app.services.rag.ingestion import ensure_corpus
+
+    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=tmp_path / "nope")
+
+    assert ensure_corpus(store, settings) is None
+
+
+def test_ensure_corpus_skips_already_populated_store(store, tmp_path: Path) -> None:
+    from app.config.settings import Settings
+    from app.services.rag.ingestion import ensure_corpus
+
+    docs_dir = tmp_path / "docs"
+    write_documents(docs_dir)
+    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=docs_dir)
+
+    doc = ParsedDocument(
+        source="preexisting.md",
+        title="Pre",
+        access_level="general",
+        text="Pre-existing chunk. " * 5,
+    )
+    IngestionService(store).ingest_text(doc)
+    before = store.count()
+
+    assert ensure_corpus(store, settings) is None
+    assert store.count() == before
     assert set(summary["errors"]) == {"bad.md"}
     assert summary["skipped"] == ["empty.md"]
     assert store.count() == summary["chunks"] == 1

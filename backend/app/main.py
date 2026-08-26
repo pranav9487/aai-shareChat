@@ -2,14 +2,41 @@
 
 Run locally (repo root)::
 
-    uvicorn backend.app.main:app --reload
+    uvicorn app.main:app --reload --app-dir backend
 """
 
 from __future__ import annotations
 
+import logging
+from contextlib import asynccontextmanager
+from typing import AsyncIterator
+
 from fastapi import FastAPI
 
 from app.api.routes.query import router as query_router
+from app.config.settings import get_settings
+from app.services.rag.ingestion import ensure_corpus
+from app.vectorstore.chroma_client import ChromaVectorStore
+
+logger = logging.getLogger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    """Auto-provision the document corpus so a fresh checkout is answerable."""
+    settings = get_settings()
+    try:
+        store = ChromaVectorStore(
+            persist_dir=settings.chroma_persist_dir,
+            collection_name=settings.collection_name,
+        )
+        summary = ensure_corpus(store, settings)
+        if summary is not None:
+            logger.info("auto-ingested corpus on startup: %s", summary)
+    except Exception as exc:  # noqa: BLE001 - startup provisioning must not kill the app
+        logger.warning("corpus auto-provisioning skipped: %s", exc)
+    yield
+
 
 app = FastAPI(
     title="aai-share-chat backend",
@@ -18,6 +45,7 @@ app = FastAPI(
         "Secure employee RAG chat — authenticated, permission-filtered "
         "document queries (roadmap items 1–2)."
     ),
+    lifespan=lifespan,
 )
 
 app.include_router(query_router)

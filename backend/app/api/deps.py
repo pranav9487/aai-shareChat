@@ -6,13 +6,36 @@ from functools import lru_cache
 
 from fastapi import Depends, Header, HTTPException
 
-from app.config.settings import get_settings
+from app.config.settings import Settings, get_settings
 from app.services.access_control import User, UserDirectory, UserNotFoundError
 from app.services.access_control.directory import InMemoryUserDirectory, build_directory
-from app.services.llm.groq_chain import make_generate
+from app.services.llm.groq_chain import GenerationError, make_generate
 from app.services.rag.pipeline import RAGPipeline
 from app.services.rag.retriever import Retriever
 from app.vectorstore.chroma_client import ChromaVectorStore
+
+
+def _build_pipeline(settings: Settings) -> RAGPipeline:
+    """Construct the pipeline from *settings*.
+
+    Configuration problems surface as actionable HTTP errors instead of bare
+    500s: a missing/empty ``GROQ_API_KEY`` makes ``make_generate`` raise
+    ``GenerationError`` here, which previously escaped dependency resolution
+    uncaught (root cause of the opaque "Request failed" UI state).
+    """
+    store = ChromaVectorStore(
+        persist_dir=settings.chroma_persist_dir,
+        collection_name=settings.collection_name,
+    )
+    retriever = Retriever(store, top_k=settings.retrieval_top_k)
+    try:
+        generate = make_generate(settings=settings)
+    except GenerationError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM backend not configured: set GROQ_API_KEY (and a valid GROQ_MODEL) in .env",
+        ) from exc
+    return RAGPipeline(retriever=retriever, generate=generate)
 
 
 @lru_cache
@@ -20,15 +43,9 @@ def get_pipeline() -> RAGPipeline:
     """Build the default pipeline once per process.
 
     Tests override this dependency with ``app.dependency_overrides`` instead
-    of touching real ChromaDB/Groq.
+    of touching real ChromaDB/Groq; ``_build_pipeline`` is the testable core.
     """
-    settings = get_settings()
-    store = ChromaVectorStore(
-        persist_dir=settings.chroma_persist_dir,
-        collection_name=settings.collection_name,
-    )
-    retriever = Retriever(store, top_k=settings.retrieval_top_k)
-    return RAGPipeline(retriever=retriever, generate=make_generate(settings=settings))
+    return _build_pipeline(get_settings())
 
 
 @lru_cache

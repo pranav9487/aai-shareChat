@@ -166,3 +166,23 @@ class IngestionService:
         summary["skipped"] = skipped
         summary["errors"] = errors
         return summary
+
+
+def ensure_corpus(store: ChromaVectorStore, settings: Settings | None = None) -> dict[str, object] | None:
+    """Ingest the configured corpus once if the collection is still empty.
+
+    Keeps the demo self-provisioning: a fresh checkout with an empty
+    ``CHROMA_PERSIST_DIR`` becomes answerable after the first server start,
+    with no manual ingest step. Idempotent — a populated collection is never
+    touched (explicit re-ingestion remains a manual operation).
+
+    Returns the ingestion summary, or ``None`` when nothing was done
+    (already populated, or the documents directory does not exist).
+    """
+    resolved = settings or get_settings()
+    if store.count() > 0:
+        return None
+    docs_dir = Path(resolved.documents_dir)
+    if not docs_dir.is_dir():
+        return None
+    return IngestionService(store, resolved).ingest_directory(docs_dir)

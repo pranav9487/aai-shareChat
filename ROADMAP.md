@@ -27,8 +27,13 @@ pre-auth dev stub. See ADR-0004.
 
 ### Next
 
-#### v1. Build the React Frontend
-
+#### v1. Build the React Frontend — ✅ DONE (2026-08-26, branch `feature/frontend-rebuild`)
+Implemented: Vite + React 18 + **JavaScript** app (see ADR-0005, which supersedes the discarded
+TypeScript attempt parked on `feature/frontend-bootstrap`) with a demo-user picker plus custom
+id/role override, an identity-aware chat that posts to `POST /api/query` with the `X-User-ID`
+header, distinct rendering for security-based declines, and a per-session `session_id` already
+carried in every request (dormant until Next-v2 Supabase). Gates: ESLint clean, 16 offline
+Vitest/RTL tests, vite build; dev proxy removes any CORS need on the backend.
 * Create a user selection screen for test users.
 * Create the chat interface.
 * Allow users to select or provide their `user_id` and role.

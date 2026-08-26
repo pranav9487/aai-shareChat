@@ -7,6 +7,13 @@
 
 ## Done
 
+- frontend-rebuild — identity-aware chat UI rebuilt in **JavaScript** per product decision
+  (TS attempt on parked branch feature/frontend-bootstrap discarded): Vite+React18+JSX, demo-user
+  picker + custom id/role override, single apiClient posting X-User-ID to POST /api/query,
+  canonical-decline detection + styled security notices, per-page session_id on every request,
+  Vite dev proxy (no backend CORS); gates: ESLint clean (new lint gate incl. react-hooks rules),
+  Vitest/RTL 16/16, vite build ✓, backend regression ✓; ADR-0005 rewritten as the JS decision —
+  2026-08-26 (branch feature/frontend-rebuild, NOT yet merged).
 - access-control — X-User-ID identity + UserDirectory protocol (in-memory seed, optional
   ACCESS_CONTROL_SEED_JSON), role→tier RBAC enforced inside the ChromaDB where-filter, canonical
   security-decline vs not-found answers, authenticated POST /api/query replacing the pre-auth dev

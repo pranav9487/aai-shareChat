@@ -52,6 +52,16 @@ class TestInMemoryUserDirectory:
         assert directory.get_user("carlos").role == Role.MANAGER
         assert directory.get_user("dana").role == Role.EXECUTIVE
 
+    def test_default_directory_includes_guest(self) -> None:
+        """`guest` mirrors the frontend DEMO_USERS catch-all and must resolve
+        to a low-privilege employee — never to hr/manager/executive."""
+        directory = InMemoryUserDirectory()
+        guest = directory.get_user("guest")
+        assert guest.role == Role.EMPLOYEE
+        assert guest.allowed_tiers == {"general"}, (
+            "guest must not be able to read hr/restricted/management tiers"
+        )
+
     def test_unknown_id_raises_lookup_error(self) -> None:
         directory = InMemoryUserDirectory()
         with pytest.raises(UserNotFoundError):

@@ -28,7 +28,7 @@ export function App() {
       { id: nextMessageId(), author: "user", text: question },
     ]);
     try {
-      const response = await queryDocuments(question, identity.user_id, sessionIdRef.current);
+      const response = await queryDocuments(question, identity.user_id, sessionIdRef.current, identity.role);
       setMessages((previous) => [
         ...previous,
         {

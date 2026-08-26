@@ -28,12 +28,18 @@ export class ApiError extends Error {
  * @param {string} question
  * @param {string} userId
  * @param {string} sessionId
+ * @param {string} [role]
  * @returns {Promise<QueryResponse>}
  */
-export async function queryDocuments(question, userId, sessionId) {
+export async function queryDocuments(question, userId, sessionId, role) {
+  const headers = { "Content-Type": "application/json", "X-User-ID": userId };
+  if (role) {
+    headers["X-User-Role"] = role;
+  }
+
   const response = await fetch(QUERY_ENDPOINT, {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-User-ID": userId },
+    headers,
     body: JSON.stringify({ question, session_id: sessionId }),
   });
 

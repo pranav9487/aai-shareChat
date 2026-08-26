@@ -11,6 +11,7 @@ export const DEMO_USERS = [
   { user_id: "priya", display_name: "Priya", role: "hr" },
   { user_id: "carlos", display_name: "Carlos", role: "manager" },
   { user_id: "dana", display_name: "Dana", role: "executive" },
+  { user_id: "guest", display_name: "Guest", role: "employee" },
 ];
 
 /**

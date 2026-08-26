@@ -162,11 +162,9 @@ def test_ensure_corpus_skips_already_populated_store(store, tmp_path: Path) -> N
         access_level="general",
         text="Pre-existing chunk. " * 5,
     )
-    IngestionService(store).ingest_text(doc)
+    chunks_written = IngestionService(store).ingest_text(doc)
     before = store.count()
 
     assert ensure_corpus(store, settings) is None
     assert store.count() == before
-    assert set(summary["errors"]) == {"bad.md"}
-    assert summary["skipped"] == ["empty.md"]
-    assert store.count() == summary["chunks"] == 1
+    assert chunks_written == before == 1

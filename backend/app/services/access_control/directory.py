@@ -30,6 +30,9 @@ def _build_default_users() -> dict[str, User]:
         User(user_id="priya", display_name="Priya (HR)", role=Role.HR),
         User(user_id="carlos", display_name="Carlos (Manager)", role=Role.MANAGER),
         User(user_id="dana", display_name="Dana (Executive)", role=Role.EXECUTIVE),
+        # Low-privilege catch-all that mirrors the frontend DEMO_USERS list.
+        # Kept last so the four role-demonstrating users stay the canonical examples.
+        User(user_id="guest", display_name="Guest (Employee)", role=Role.EMPLOYEE),
     ]
     return {user.user_id: user for user in users}
 

@@ -48,6 +48,7 @@ describe("App integration (identity-aware chat)", () => {
       "How many vacation days do we get?",
       "alice",
       expect.any(String),
+      "employee",
     );
     expect(await screen.findByText("Employees accrue 25 vacation days.")).toBeInTheDocument();
   });

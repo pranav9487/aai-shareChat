@@ -34,7 +34,7 @@ def make_generate(
     """
     resolved = settings or get_settings()
     if llm is None:
-        if not resolved.groq_api_key:
+        if not (resolved.groq_api_key or "").strip():
             raise GenerationError("GROQ_API_KEY is not set; cannot create the Groq chat model")
         from langchain_groq import ChatGroq  # lazy import: heavy dependency + key-gated
 

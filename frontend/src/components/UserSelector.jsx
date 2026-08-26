@@ -43,7 +43,7 @@ export function UserSelector({ identity, onSelectDemo, onSetCustom }) {
       <form className="custom-identity" onSubmit={submitCustom}>
         <input
           aria-label="Custom user ID"
-          placeholder="custom user id…"
+          placeholder="registered user id (e.g. alice, priya, carlos, dana, guest)…"
           value={draftUserId}
           onChange={(e) => setDraftUserId(e.target.value)}
         />

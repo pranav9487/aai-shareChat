@@ -145,5 +145,8 @@ class PineconeVectorStore(VectorStore):
             return reported
         # Serverless index stats lag behind recent upserts; double-check a zero
         # report with a direct probe so fresh data is never mistaken for empty.
-        probe = index.query(vector=[0.0] * self._dimension, top_k=1, namespace=self._namespace)
+        # The probe vector must be non-zero: cosine similarity is undefined for
+        # the zero vector and Pinecone returns no matches for it.
+        probe_vector = [1.0] + [0.0] * (self._dimension - 1)
+        probe = index.query(vector=probe_vector, top_k=1, namespace=self._namespace)
         return len(probe.matches or [])

@@ -186,6 +186,10 @@ def test_count_probes_when_stats_lag_behind_upserts(store) -> None:
     def _probe_query(**kwargs) -> object:
         assert kwargs["top_k"] == 1
         assert kwargs["namespace"] == "ns"
+        probe_vector = kwargs["vector"]
+        assert any(
+            v != 0.0 for v in probe_vector
+        ), "zero probe vectors are unusable under cosine similarity"
         return _ProbeResult()
 
     index.namespaces = {}  # stats say empty...

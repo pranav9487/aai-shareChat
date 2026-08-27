@@ -27,7 +27,12 @@
 - Embeddings model: local MiniLM-L6-v2 (ONNX via FastEmbed, 384-dim) behind the injectable `EmbedFn` (ADR-0002, kept in ADR-0007); the Pinecone index is created to match (dim 384)
 
 ## Database
-- Supabase
+- Supabase (Postgres via postgrest) — **in use** (ADR-0008, roadmap Next-v2)
+- Selected in `deps.py` via `resolve_supabase_client`: both `SUPABASE_URL` +
+  `SUPABASE_SERVICE_KEY` set → durable stores; both blank → in-memory stores
+  (offline dev/test default); half-set → fail-fast ValueError at startup
+- Schema: `supabase/schema.sql` — `app_users`, `sessions`, `session_messages`
+  (sources jsonb, access_levels text[]); service-role key, server-side only
 - Intended usage:
   - Conversation history
   - Session data
@@ -36,13 +41,13 @@
   - Access-control-related data
 
 ## Shared sessions (roadmap item 3)
-- `SessionStore` protocol seam (in-memory today; Supabase later) — mirrors the
-  `UserDirectory` seam from ADR-0004. See ADR-0006.
+- `SessionStore` protocol seam (ADR-0006): in-memory default, Supabase when
+  configured (ADR-0008) — conformance tests pin the two to identical behavior
 - `POST /api/query` requires `session_id` and logs each exchange (author, role,
-  question, answer, sources, drawn `access_level`s) to the store.
+  question, answer, sources, drawn `access_level`s) to the store
 - `GET /api/sessions/{session_id}` returns the transcript filtered per the
   viewer's permissions; non-visible answers come back as a non-leaky
-  placeholder with empty sources.
+  placeholder with empty sources
 
 ## Testing
 - Test framework: pytest (config in root `pyproject.toml`)
@@ -94,7 +99,7 @@ Expected values include:
 - Pinecone index name / namespace / cloud / region (`PINECONE_INDEX_NAME`, `PINECONE_NAMESPACE`, `PINECONE_CLOUD`, `PINECONE_REGION`) — see ADR-0007
 - Documents dir (`DOCUMENTS_DIR`)
 - Optional user-registry seed JSON (`ACCESS_CONTROL_SEED_JSON`) — ADR-0004
-- Supabase URL / keys (future items)
+- Supabase URL / service key (`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`) — see ADR-0008
 - Any other future service credentials
 
 See `.env.example` for the canonical list. Do not commit `.env` files to version control.

@@ -7,6 +7,18 @@
 
 ## Done
 
+- supabase-persistence — roadmap Next-v2 (ADR-0008): `SupabaseSessionStore` +
+  `SupabaseUserDirectory` implement the existing `SessionStore`/`UserDirectory`
+  protocols exactly (same exceptions, same frozen domain objects); selected in
+  `deps.py` via `resolve_supabase_client` (both env set → Supabase, both blank →
+  in-memory, half-set → fail-fast). Schema `supabase/schema.sql` (`app_users`,
+  `sessions`, `session_messages` with sources jsonb + access_levels text[] —
+  the exact inputs §4 follow-up handling needs). Conformance suite parametrizes
+  every store behavior over both implementations with an offline fake postgrest
+  client (caught a real bug pre-commit: message rows missing session_id);
+  deps-selection + corrupt-row tests; live round-trip auto-skips without keys.
+  Full pytest suite green, ruff/black clean — 2026-08-27 (branch
+  feature/supabase-persistence, NOT yet merged).
 - backend-live-debug — end-to-end live verification of POST /api/query after the Pinecone
   pivot; fixed the full failure chain on main (b1a280d…10b6b9d): 403 "unknown user"
   (frontend/backend user-list drift → `guest` seeded on both sides, employee-only); bare 500 on

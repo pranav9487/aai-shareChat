@@ -60,13 +60,21 @@ Vitest/RTL tests, vite build; dev proxy removes any CORS need on the backend.
 - [x] Send the `user_id`, role, `session_id`, and message to the FastAPI backend.
 - [x] Display AI responses and security-based responses in the chat.
 
-#### v2. Integrate Supabase
+#### v2. Integrate Supabase — ✅ DONE (2026-08-27, branch `feature/supabase-persistence`)
 
-* Store conversation history.
-* Store shared session information.
-* Store user-related data required for the project.
-* Track conversation messages with the associated `user_id`, role, and session information.
-* Use the stored data to support shared-session testing and safe follow-up handling.
+Implemented (ADR-0008): durable persistence behind the existing
+`SessionStore`/`UserDirectory` protocol seams — `SupabaseSessionStore` +
+`SupabaseUserDirectory` selected in the composition root only when
+`SUPABASE_URL` + `SUPABASE_SERVICE_KEY` are both set (half-set config fails
+fast; unset keeps the in-memory default so dev/tests stay offline). Schema in
+`supabase/schema.sql` (`app_users`, `sessions`, `session_messages` with
+sources + access_levels). Conformance tests prove the Supabase store matches
+the in-memory store behavior exactly; live round-trip auto-skips without keys.
+- [x] Store conversation history.
+- [x] Store shared session information.
+- [x] Store user-related data required for the project (user IDs, roles).
+- [x] Track conversation messages with the associated `user_id`, role, and session information.
+- [x] Keep stored data ready to support shared-session testing and safe follow-up handling (§4).
 
 #### v3. Connect Frontend and Backend
 

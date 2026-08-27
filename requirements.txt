@@ -5,6 +5,7 @@ langchain-core>=0.3,<0.5
 langchain-groq>=0.2,<0.5
 fastembed>=0.4,<1
 pinecone>=7,<10
+supabase>=2,<3
 pydantic>=2.7,<3
 pydantic-settings>=2.3,<3
 

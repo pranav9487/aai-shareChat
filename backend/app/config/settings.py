@@ -50,6 +50,13 @@ class Settings(BaseSettings):
     # '[{"user_id": "alice", "display_name": "Alice", "role": "employee"}, ...]'
     access_control_seed_json: str = ""
 
+    # --- Supabase persistence (ADR-0008) ---
+    # When BOTH are set, sessions/messages and the user directory persist to
+    # Supabase (schema in supabase/schema.sql). When either is blank the
+    # in-memory implementations are used, so dev/tests stay offline.
+    supabase_url: str = ""
+    supabase_service_key: str = ""
+
 
 @lru_cache
 def get_settings() -> Settings:

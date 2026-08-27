@@ -22,6 +22,17 @@ class ExplodingLLM(RunnableLambda):
         super().__init__(func=lambda value: (_ for _ in ()).throw(RuntimeError("api down")))
 
 
+class ThinkingLLM(RunnableLambda):
+    """Mimics qwen3-style reasoning models that prefix a <think> block."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            func=lambda value: AIMessage(
+                content="<think>\ninternal reasoning must never leak\n</think>\nFinal answer."
+            )
+        )
+
+
 CHUNKS = [
     RetrievedChunk(
         text="Employees accrue 25 vacation days.",
@@ -67,3 +78,10 @@ def test_llm_failure_is_wrapped_in_generation_error() -> None:
     generate = make_generate(llm=ExplodingLLM(), settings=Settings(groq_api_key="", groq_model="m"))
     with pytest.raises(GenerationError, match="generation failed"):
         generate("question", CHUNKS)
+
+
+def test_reasoning_model_think_block_is_stripped_from_answers() -> None:
+    generate = make_generate(llm=ThinkingLLM(), settings=Settings(groq_api_key="", groq_model="m"))
+    answer = generate("question", CHUNKS)
+    assert answer == "Final answer."
+    assert "<think>" not in answer, "raw chain-of-thought must never reach users"

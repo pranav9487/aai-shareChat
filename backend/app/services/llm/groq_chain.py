@@ -7,6 +7,7 @@ the retrieved context and reply with the canonical not-found message
 
 from __future__ import annotations
 
+import re
 from collections.abc import Callable, Sequence
 
 from langchain_core.output_parsers import StrOutputParser
@@ -55,9 +56,12 @@ def make_generate(
 
     def generate(question: str, chunks: Sequence[RetrievedChunk]) -> str:
         try:
-            return str(chain.invoke({"context": format_context(chunks), "question": question}))
+            raw = str(chain.invoke({"context": format_context(chunks), "question": question}))
         except Exception as exc:  # noqa: BLE001 - wrapped into a domain error on purpose
             raise GenerationError(f"generation failed: {exc}") from exc
+        # Reasoning models (e.g. qwen3) emit a <think>…</think> block before
+        # the answer; strip it so users never see raw chain-of-thought.
+        return re.sub(r"<think>.*?</think>\s*", "", raw, flags=re.DOTALL).strip()
 
     return generate
 

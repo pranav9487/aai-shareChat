@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
 
-import { queryDocuments } from "./api/apiClient";
+import { getSession, queryDocuments } from "./api/apiClient";
 import { ChatInput } from "./components/ChatInput";
 import { ChatWindow } from "./components/ChatWindow";
+import { SharedTranscript } from "./components/SharedTranscript";
 import { UserSelector } from "./components/UserSelector";
 import { ACCESS_DENIED_ANSWER, DEMO_USERS, makeSessionId, nextMessageId } from "./constants";
 
@@ -10,6 +11,8 @@ export function App() {
   const [identity, setIdentity] = useState(null);
   const [messages, setMessages] = useState([]);
   const [sending, setSending] = useState(false);
+  const [shared, setShared] = useState([]);
+  const [loadingShared, setLoadingShared] = useState(false);
   // One session id per page visit; consumed by Supabase integration later.
   const sessionIdRef = useRef(makeSessionId());
 
@@ -54,6 +57,27 @@ export function App() {
     }
   };
 
+  const refreshShared = async () => {
+    if (!identity) return;
+    setLoadingShared(true);
+    try {
+      const session = await getSession(sessionIdRef.current, identity.user_id);
+      setShared(
+        session.messages.map((message) => ({
+          id: message.message_id,
+          sender: message.sender_user_id,
+          question: message.question,
+          answer: message.answer,
+          visible: message.visible,
+        })),
+      );
+    } catch {
+      setShared([]);
+    } finally {
+      setLoadingShared(false);
+    }
+  };
+
   return (
     <main className="app">
       <header className="app-header">
@@ -64,6 +88,13 @@ export function App() {
       <UserSelector identity={identity} onSelectDemo={selectDemoUser} onSetCustom={setIdentity} />
 
       <ChatWindow messages={messages} />
+
+      <SharedTranscript
+        messages={shared}
+        onRefresh={() => void refreshShared()}
+        disabled={!identity}
+        loading={loadingShared}
+      />
 
       <ChatInput disabled={!identity || sending} onSend={(text) => void sendQuestion(text)} />
 

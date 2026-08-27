@@ -2,15 +2,16 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { App } from "./App";
-import { ApiError, queryDocuments } from "./api/apiClient";
+import { ApiError, getSession, queryDocuments } from "./api/apiClient";
 import { ACCESS_DENIED_ANSWER } from "./constants";
 
 vi.mock("./api/apiClient", async (importOriginal) => {
   const actual = await importOriginal();
-  return { ...actual, queryDocuments: vi.fn() };
+  return { ...actual, queryDocuments: vi.fn(), getSession: vi.fn() };
 });
 
 const mockedQuery = vi.mocked(queryDocuments);
+const mockedGetSession = vi.mocked(getSession);
 
 function mockQueryResponse(answer) {
   return mockedQuery.mockResolvedValueOnce({
@@ -32,6 +33,7 @@ async function selectAliceAndAsk(question) {
 describe("App integration (identity-aware chat)", () => {
   beforeEach(() => {
     mockedQuery.mockReset();
+    mockedGetSession.mockReset();
   });
 
   it("disables asking until an identity is chosen", () => {
@@ -67,5 +69,63 @@ describe("App integration (identity-aware chat)", () => {
     await selectAliceAndAsk("anything");
 
     expect(await screen.findByText(/request failed: generation failed/i)).toBeInTheDocument();
+  });
+
+  it("loads the shared transcript filtered to the current viewer", async () => {
+    mockedGetSession.mockResolvedValueOnce({
+      session_id: "sess-1",
+      messages: [
+        {
+          message_id: "m1",
+          sender_user_id: "priya",
+          sender_role: "hr",
+          question: "vacation days?",
+          answer: "25 days",
+          sources: [{ source: "hr.md" }],
+          visible: true,
+        },
+      ],
+    });
+
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: /Alice/ }));
+    await userEvent.click(screen.getByRole("button", { name: /^Refresh$/ }));
+    await waitFor(() => expect(mockedGetSession).toHaveBeenCalled());
+
+    expect(mockedGetSession).toHaveBeenCalledWith(expect.any(String), "alice");
+    expect(await screen.findByText("25 days")).toBeInTheDocument();
+  });
+
+  it("renders hidden transcript messages as security notices without leaking the answer", async () => {
+    mockedGetSession.mockResolvedValueOnce({
+      session_id: "sess-1",
+      messages: [
+        {
+          message_id: "m1",
+          sender_user_id: "dana",
+          sender_role: "executive",
+          question: "bonus?",
+          answer: "This message is not visible under your access permissions.",
+          sources: [],
+          visible: false,
+        },
+      ],
+    });
+
+    render(<App />);
+    await userEvent.click(screen.getByRole("button", { name: /Alice/ }));
+    await userEvent.click(screen.getByRole("button", { name: /^Refresh$/ }));
+
+    // The viewer-typed question is shown; the restricted answer is not.
+    expect(await screen.findByText("bonus?")).toBeInTheDocument();
+    expect(
+      screen.getByText(/not visible under your access permissions/i),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/secret over under/)).not.toBeInTheDocument();
+  });
+
+  it("keeps the transcript refresh disabled until an identity is chosen", () => {
+    render(<App />);
+    expect(screen.getByRole("button", { name: /^Refresh$/ })).toBeDisabled();
   });
 });

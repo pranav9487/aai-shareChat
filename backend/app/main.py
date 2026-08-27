@@ -43,7 +43,8 @@ app = FastAPI(
     version="0.2.0",
     description=(
         "Secure employee RAG chat — authenticated, permission-filtered "
-        "document queries (roadmap items 1–2)."
+        "document queries (roadmap items 1–3) with shared-session transcripts "
+        "filtered per viewer."
     ),
     lifespan=lifespan,
 )

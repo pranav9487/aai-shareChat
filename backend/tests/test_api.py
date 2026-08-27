@@ -1,8 +1,8 @@
 """API-level tests via FastAPI TestClient with dependencies overridden.
 
-Covers roadmap item 2 semantics at the HTTP boundary: mandatory identity,
-non-leaky failures, per-role tier forwarding, and application-level security
-declines.
+Covers roadmap items 2–3 at the HTTP boundary: mandatory identity, non-leaky
+failures, per-role tier forwarding, application-level security declines, and
+shared-session persistence with per-viewer filtered transcripts.
 """
 
 from __future__ import annotations
@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 
 import pytest
-from app.api.deps import get_pipeline, get_user_directory
+from app.api.deps import get_pipeline, get_session_service, get_user_directory
 from app.main import app
 from app.services.access_control import InMemoryUserDirectory, Role, User
 from app.services.rag.pipeline import (
@@ -19,6 +19,7 @@ from app.services.rag.pipeline import (
     PipelineError,
     QueryResult,
 )
+from app.services.session import HIDDEN_MESSAGE, InMemorySessionStore
 from fastapi.testclient import TestClient
 
 
@@ -46,11 +47,21 @@ def fake_pipeline() -> Iterator[FakePipeline]:
 
 
 @pytest.fixture
+def sessions() -> Iterator[InMemorySessionStore]:
+    store = InMemorySessionStore()
+    app.dependency_overrides[get_session_service] = lambda: store
+    yield store
+    app.dependency_overrides.pop(get_session_service, None)
+
+
+@pytest.fixture
 def directory() -> Iterator[InMemoryUserDirectory]:
     directory = InMemoryUserDirectory(
         users={
             "emp": User(user_id="emp", display_name="Employee", role=Role.EMPLOYEE),
+            "mgr": User(user_id="mgr", display_name="Manager", role=Role.MANAGER),
             "hrp": User(user_id="hrp", display_name="HR Person", role=Role.HR),
+            "exe": User(user_id="exe", display_name="Executive", role=Role.EXECUTIVE),
         }
     )
     app.dependency_overrides[get_user_directory] = lambda: directory
@@ -59,13 +70,19 @@ def directory() -> Iterator[InMemoryUserDirectory]:
 
 
 @pytest.fixture
-def client(fake_pipeline: FakePipeline, directory: InMemoryUserDirectory) -> TestClient:
+def client(
+    fake_pipeline: FakePipeline, sessions: InMemorySessionStore, directory: InMemoryUserDirectory
+) -> TestClient:
     return TestClient(app)
 
 
 def _post(client: TestClient, question: str = "vacation days?", user_id: str | None = "emp"):
     headers = {"X-User-ID": user_id} if user_id is not None else {}
-    return client.post("/api/query", json={"question": question}, headers=headers)
+    return client.post(
+        "/api/query",
+        json={"question": question, "session_id": "sess-1"},
+        headers=headers,
+    )
 
 
 def test_health_endpoint(client: TestClient) -> None:
@@ -158,3 +175,132 @@ def test_missing_question_field_is_422(client: TestClient) -> None:
 def test_blank_question_fails_validation_as_422(client: TestClient) -> None:
     response = client.post("/api/query", json={"question": ""}, headers={"X-User-ID": "emp"})
     assert response.status_code == 422
+
+
+# --- Item 3: shared-session safety at the HTTP boundary ---
+
+
+def test_query_missing_session_id_is_422(client: TestClient) -> None:
+    response = client.post("/api/query", json={"question": "q"}, headers={"X-User-ID": "emp"})
+    assert response.status_code == 422
+
+
+def test_query_blank_session_id_is_422(client: TestClient) -> None:
+    response = client.post(
+        "/api/query",
+        json={"question": "q", "session_id": "   "},
+        headers={"X-User-ID": "emp"},
+    )
+    assert response.status_code == 422
+
+
+def test_query_persists_exchange_into_session(
+    client: TestClient, fake_pipeline: FakePipeline, sessions: InMemorySessionStore
+) -> None:
+    fake_pipeline.result = QueryResult(
+        answer="bands live in management.",
+        sources=[{"source": "m.md", "access_level": "management"}],
+    )
+    response = client.post(
+        "/api/query",
+        json={"question": "salary bands?", "session_id": "sess-1"},
+        headers={"X-User-ID": "mgr"},
+    )
+    assert response.status_code == 200
+
+    session = sessions.get("sess-1")
+    assert len(session.messages) == 1
+    message = session.messages[0]
+    assert message.sender_user_id == "mgr"
+    assert message.sender_role == Role.MANAGER
+    assert message.question == "salary bands?"
+    assert message.access_levels == frozenset({"management"})
+    assert message.sources == ({"source": "m.md", "access_level": "management"},)
+
+
+def test_session_read_accumulates_multiple_participants(
+    client: TestClient, sessions: InMemorySessionStore
+) -> None:
+    client.post(
+        "/api/query",
+        json={"question": "q1", "session_id": "shared"},
+        headers={"X-User-ID": "emp"},
+    )
+    client.post(
+        "/api/query",
+        json={"question": "q2", "session_id": "shared"},
+        headers={"X-User-ID": "hrp"},
+    )
+
+    session = sessions.get("shared")
+    assert [m.sender_user_id for m in session.messages] == ["emp", "hrp"]
+
+
+def test_viewer_without_permission_gets_non_leaky_placeholder(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    fake_pipeline.result = QueryResult(
+        answer="the executive bonus formula", sources=[{"name": "m.md", "access_level": "management"}]
+    )
+    client.post(
+        "/api/query",
+        json={"question": "bonus?", "session_id": "sess-1"},
+        headers={"X-User-ID": "mgr"},
+    )
+
+    response = client.get("/sessions/sess-1", headers={"X-User-ID": "emp"})
+    assert response.status_code == 200
+    views = response.json()["messages"]
+    assert len(views) == 1
+    assert views[0]["visible"] is False
+    assert views[0]["answer"] == HIDDEN_MESSAGE
+    assert "bonus formula" not in views[0]["answer"]
+    assert views[0]["sources"] == []
+
+
+def test_author_always_reads_their_own_message(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    fake_pipeline.result = QueryResult(
+        answer="executive details", sources=[{"from": "m.md", "access_level": "management"}]
+    )
+    client.post(
+        "/api/query",
+        json={"question": "details?", "session_id": "sess-1"},
+        headers={"X-User-ID": "mgr"},
+    )
+
+    response = client.get("/sessions/sess-1", headers={"X-User-ID": "mgr"})
+    assert response.status_code == 200
+    views = response.json()["messages"]
+    assert views[0]["visible"] is True
+    assert views[0]["answer"] == "executive details"
+
+
+def test_superior_peer_reads_restricted_message(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    fake_pipeline.result = QueryResult(
+        answer="management answer", sources=[{"from": "m.md", "access_level": "management"}]
+    )
+    client.post(
+        "/api/query",
+        json={"question": "m?", "session_id": "sess-1"},
+        headers={"X-User-ID": "mgr"},
+    )
+    # An executive (who outranks a manager) may read the manager's answer.
+    response = client.get("/sessions/sess-1", headers={"X-User-ID": "exe"})
+    assert response.status_code == 200
+    assert response.json()["messages"][0]["visible"] is True
+    assert response.json()["messages"][0]["answer"] == "management answer"
+
+
+def test_session_read_requires_identity(client: TestClient) -> None:
+    response = client.get("/sessions/sess-1")
+    assert response.status_code == 401
+
+
+def test_session_read_unknown_session_is_404_non_leaky(client: TestClient) -> None:
+    response = client.get("/sessions/nope", headers={"X-User-ID": "emp"})
+    assert response.status_code == 404
+    assert "nope" not in response.json()["detail"]

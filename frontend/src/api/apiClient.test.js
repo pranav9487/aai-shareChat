@@ -1,4 +1,4 @@
-import { ApiError, queryDocuments } from "./apiClient";
+import { ApiError, getSession, queryDocuments } from "./apiClient";
 
 const QUERY_RESPONSE = { answer: "25 days", sources: [{ source: "hr.md" }] };
 
@@ -59,6 +59,78 @@ describe("queryDocuments", () => {
     await expect(queryDocuments("q", "alice", "s")).rejects.toMatchObject({
       status: 500,
       message: "Internal Server Error",
+    });
+  });
+});
+
+describe("getSession", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("gets a shared session transcript with the viewer identity header", async () => {
+    const transcript = {
+      session_id: "sess-1",
+      messages: [
+        {
+          message_id: "m1",
+          sender_user_id: "priya",
+          sender_role: "hr",
+          question: "vacation days?",
+          answer: "25 days",
+          sources: [],
+          visible: true,
+        },
+      ],
+    };
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: async () => transcript,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await getSession("sess-1", "alice");
+
+    expect(result).toEqual(transcript);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("/api/sessions/sess-1");
+    expect(init.method).toBe("GET");
+    expect(init.headers["X-User-ID"]).toBe("alice");
+  });
+
+  it("encodes the session id in the path", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: async () => ({ session_id: "a/b", messages: [] }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await getSession("a/b", "alice");
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/sessions/a%2Fb",
+      expect.objectContaining({ method: "GET" }),
+    );
+  });
+
+  it("surfaces the backend detail on a missing session", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        statusText: "Not Found",
+        json: async () => ({ detail: "Session not found." }),
+      }),
+    );
+
+    await expect(getSession("nope", "alice")).rejects.toMatchObject({
+      status: 404,
+      message: "Session not found.",
     });
   });
 });

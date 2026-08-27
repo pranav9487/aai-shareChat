@@ -7,6 +7,23 @@
 
 ## Done
 
+- nexora-ingestion — prepared chunk/embed/load of `documents/Nexora Technologies
+  Pvt. Ltd.md`: `documents/ingest_nexora.py` splits the handbook into its 28
+  numbered policy sections, assigns per-section RBAC access levels, writes each as
+  a front-matter'd corpus doc, then chunks (~800 chars/~100 overlap) and embeds
+  (ChromaDB default MiniLM) into the persistent `internal_docs` collection with
+  `source/access_level/title/chunk_index` metadata. Hardened the script to create
+  `OUTPUT_DIR` on a clean checkout and to fail-fast when no sections parse.
+  NOT executed here — the repo's bash shell is broken (spawn `bash.exe ENOENT`),
+  so ChromaDB ingestion still needs a working terminal. — 2026-08-27.
+- shared-sessions — roadmap Now §3: `SessionStore` protocol + `InMemorySessionStore`
+  (`backend/app/services/session/`), required (and now logged) `session_id` on
+  POST /api/query, and a read-time visibility filter on GET /api/sessions/{id}
+  that returns a non-leaky placeholder (never the answer/sources) when a viewer
+  lacks the tiers a message drew from; live retrieval still fresh + filtered per
+  user (no reuse of another user's context). Frontend: `getSession` client +
+  shared-transcript panel with per-viewer refresh; ADR-0006; RBAC/extant tests
+  preserved. Branch feature/shared-sessions, NOT yet merged — 2026-08-27.
 - debug-unknown-user-403 — identified root cause of 403 Forbidden ("Access denied: unknown user"): backend `InMemoryUserDirectory` strictly validates user IDs against seeded users (`alice`, `priya`, `carlos`, `dana`, `guest`); entering an unseeded ID like `1` properly triggers non-leaky 403 rejection. Updated input placeholder in `UserSelector.jsx` to clearly show valid seed IDs — 2026-08-26.
 
 - frontend-rebuild — identity-aware chat UI rebuilt in **JavaScript** per product decision

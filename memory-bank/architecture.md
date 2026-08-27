@@ -27,6 +27,7 @@ project-root/
 │   │   ├── services/
 │   │   │   ├── rag/
 │   │   │   ├── access_control/  (item 2 — implemented: models, directory)
+│   │   │   ├── session/         (item 3 — implemented: store, visibility)
 │   │   │   ├── conversation/     (future)
 │   │   │   └── llm/
 │   │   ├── models/               (future)

@@ -18,8 +18,13 @@
   RecordingGenerator, InMemoryUserDirectory) — plain unit tests never touch network/ONNX/Groq.
 - FastAPI providers live in `app/api/deps.py` as `@lru_cache` factories; tests swap them via
   `app.dependency_overrides`.
+- Session layer (item 3): `SessionStore` protocol + `InMemorySessionStore` in
+  `app/services/session/`; `GET /api/sessions/{id}` runs a read-time visibility
+  filter (`visible_messages`) that hides a non-author's answer unless every
+  `access_level` it drew from is within the viewer's tiers — content that
+  cannot be shared is replaced with a non-leaky placeholder, never shown.
 - Canonical user-facing sentences are module constants shared by prompt/pipeline/tests
-  (`NOT_FOUND_ANSWER`, `ACCESS_DENIED_ANSWER`).
+  (`NOT_FOUND_ANSWER`, `ACCESS_DENIED_ANSWER`, `HIDDEN_MESSAGE`).
 - Vocabulary types are `StrEnum` with one mapping table (`ROLE_ALLOWED_TIERS`); ingestion's
   `ALLOWED_ACCESS_LEVELS` must stay identical to `AccessTier` values (test-enforced).
 - Config only via pydantic-settings + root `.env` (mirror in `.env.example`); bad seeds fail fast.

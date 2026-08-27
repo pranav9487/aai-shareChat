@@ -12,6 +12,7 @@ from app.services.access_control.directory import InMemoryUserDirectory, build_d
 from app.services.llm.groq_chain import GenerationError, make_generate
 from app.services.rag.pipeline import RAGPipeline
 from app.services.rag.retriever import Retriever
+from app.services.session.store import InMemorySessionStore
 from app.vectorstore.chroma_client import ChromaVectorStore
 
 
@@ -52,6 +53,16 @@ def get_pipeline() -> RAGPipeline:
 def get_user_directory() -> InMemoryUserDirectory:
     """Build the user directory once per process (ADR-0004)."""
     return build_directory(get_settings().access_control_seed_json)
+
+
+@lru_cache
+def get_session_service() -> InMemorySessionStore:
+    """Shared in-memory session store for the process (ADR-0006).
+
+    Tests override this dependency with ``app.dependency_overrides`` to get a
+    fresh store per test, exactly as they do for ``get_pipeline``.
+    """
+    return InMemorySessionStore()
 
 
 def get_current_user(

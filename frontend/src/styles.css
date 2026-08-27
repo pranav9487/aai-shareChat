@@ -178,3 +178,43 @@ button:disabled {
 .app-footer code {
   font-size: 0.75rem;
 }
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.shared-transcript .transcript-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.transcript-sender {
+  display: block;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.transcript-question,
+.transcript-answer {
+  margin: 0.15rem 0 0;
+}
+
+.transcript-answer.denied {
+  border: 1px solid #b3423f;
+  background: #33201f;
+  padding: 0.45rem 0.6rem;
+  border-radius: 0.6rem;
+}

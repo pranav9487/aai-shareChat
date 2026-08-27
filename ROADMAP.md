@@ -14,10 +14,18 @@ pre-auth dev stub. See ADR-0004.
 - [x] Apply role-based access control.
 - [x] Ensure users only receive information they are permitted to access.
 
-### 3. Implement Shared-Session Safety
-- Support multiple users in a shared session.
-- Track user identity for each relevant request.
-- Prevent information retrieved for one user from automatically being exposed to another user.
+### 3. Implement Shared-Session Safety — ✅ DONE (2026-08-27, branch `feature/shared-sessions`)
+Implemented: a `SessionStore` protocol (in-memory today, Supabase later via the
+same seam as `UserDirectory`), mandatory per-request identity with every answer
+logged to its `session_id`, and a read-time visibility filter on
+`GET /api/sessions/{id}` that never leaks another user's retrieved content —
+answers are replaced with a non-leaky placeholder unless every tier they drew
+from is within the viewer's permissions. Live queries still run fresh
+permission-filtered retrieval (never reuse another user's context). See
+ADR-0006.
+- [x] Support multiple users in a shared session.
+- [x] Track user identity for each relevant request.
+- [x] Prevent information retrieved for one user from automatically being exposed to another user.
 
 ### 4. Implement Safe Follow-Up Handling
 - Detect follow-up questions.

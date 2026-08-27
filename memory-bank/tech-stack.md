@@ -23,8 +23,8 @@
 
 ## Retrieval
 - RAG architecture: Yes
-- Vector database: ChromaDB (persistent client, cosine space)
-- Embeddings model: ChromaDB default (all-MiniLM-L6-v2 ONNX) behind injectable `EmbedFn` (ADR-0002)
+- Vector database: pinecone (persistent client, cosine space)
+- Embeddings model: pinecone default (all-MiniLM-L6-v2 ONNX) behind injectable `EmbedFn` (ADR-0002)
 
 ## Database
 - Supabase
@@ -34,6 +34,15 @@
   - User IDs
   - User roles
   - Access-control-related data
+
+## Shared sessions (roadmap item 3)
+- `SessionStore` protocol seam (in-memory today; Supabase later) — mirrors the
+  `UserDirectory` seam from ADR-0004. See ADR-0006.
+- `POST /api/query` requires `session_id` and logs each exchange (author, role,
+  question, answer, sources, drawn `access_level`s) to the store.
+- `GET /api/sessions/{session_id}` returns the transcript filtered per the
+  viewer's permissions; non-visible answers come back as a non-leaky
+  placeholder with empty sources.
 
 ## Testing
 - Test framework: pytest (config in root `pyproject.toml`)
@@ -81,7 +90,7 @@ All secrets, credentials, API keys, and service configuration must be stored in 
 Expected values include:
 - Groq API key (`GROQ_API_KEY`)
 - Groq model id (`GROQ_MODEL`)
-- ChromaDB persistence dir (`CHROMA_PERSIST_DIR`)
+- pinecone persistence dir (``)
 - Documents dir (`DOCUMENTS_DIR`)
 - Optional user-registry seed JSON (`ACCESS_CONTROL_SEED_JSON`) — ADR-0004
 - Supabase URL / keys (future items)

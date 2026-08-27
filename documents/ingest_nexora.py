@@ -52,7 +52,8 @@ def main():
     print(f"Reading handbook from: {HANDBOOK_PATH}")
     content = HANDBOOK_PATH.read_text(encoding="utf-8")
 
-    # Split by '# ' at start of lines
+    # Split by '# ' at start of lines (only top-level "# N. Title" headers,
+    # never "## N.N." subsection headers, which keep a double '#').
     sections = re.split(r'\n# ', '\n' + content)
     
     parsed_docs = []
@@ -79,7 +80,9 @@ def main():
             front_matter = f"---\ntitle: {title}\naccess_level: {access_level}\n---\n\n"
             sec_markdown = front_matter + sec_content
             
-            # Write to disk
+            # Write to disk (ensure the corpus directory exists — a clean
+            # checkout may not contain it yet).
+            OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
             target_path = OUTPUT_DIR / file_name
             target_path.write_text(sec_markdown, encoding="utf-8")
             print(f"Wrote section {sec_num} to {target_path.name} with access_level: {access_level}")
@@ -90,6 +93,10 @@ def main():
                 access_level=access_level,
                 text=sec_content
             ))
+
+    if not parsed_docs:
+        print("No numbered policy sections found in the handbook; nothing to ingest.")
+        sys.exit(1)
 
     print("\nConnecting to ChromaDB...")
     settings = Settings()

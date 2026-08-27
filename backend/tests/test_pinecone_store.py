@@ -78,6 +78,21 @@ def test_empty_key_raises_only_when_used() -> None:
         store_.query("anything", top_k=1)
 
 
+def test_delete_source_tolerates_missing_namespace(store) -> None:
+    """Fresh serverless namespaces 404 on filtered deletes (nothing upserted
+    yet); the adapter must treat that as 'nothing to delete' — regression for
+    the ingest crash: NotFoundError: [404] Namespace not found."""
+    from pinecone import NotFoundError
+
+    store_, index = store
+
+    def _raise(*, filter, namespace) -> None:
+        raise NotFoundError("[404] Namespace not found")
+
+    index.delete = _raise
+    store_.delete_source("a.md")  # must not raise
+
+
 def test_upsert_carries_text_in_metadata_and_embeds(store) -> None:
     store_, index = store
     n = store_.upsert_chunks(
@@ -156,3 +171,23 @@ def test_count_zero_when_namespace_absent(store) -> None:
     store_, index = store
     index.namespaces = {}
     assert store_.count() == 0
+
+
+def test_count_probes_when_stats_lag_behind_upserts(store) -> None:
+    """Serverless describe_index_stats can report 0 right after upserts while
+    queries already return matches. Regression for the live bug where the
+    retriever's empty-guard short-circuited every query on a fresh index:
+    a zero stats report must be double-checked with a direct probe."""
+    store_, index = store
+
+    class _ProbeResult:
+        matches = [object()]  # one existing vector the stats missed
+
+    def _probe_query(**kwargs) -> object:
+        assert kwargs["top_k"] == 1
+        assert kwargs["namespace"] == "ns"
+        return _ProbeResult()
+
+    index.namespaces = {}  # stats say empty...
+    index.query = _probe_query  # ...but the data is there
+    assert store_.count() == 1

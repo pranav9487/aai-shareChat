@@ -77,7 +77,14 @@ class PineconeVectorStore(VectorStore):
 
     # -- VectorStore protocol ---------------------------------------------
     def delete_source(self, source: str) -> None:
-        self._ensure().delete(filter={"source": source}, namespace=self._namespace)
+        from pinecone import NotFoundError  # lazy: SDK is only imported on use
+
+        try:
+            self._ensure().delete(filter={"source": source}, namespace=self._namespace)
+        except NotFoundError:
+            # Fresh serverless namespaces return 404 for filtered deletes when
+            # nothing has been upserted yet — that is "nothing to delete".
+            return
 
     def upsert_chunks(
         self, texts: Sequence[str], metadatas: Sequence[dict], ids: Sequence[str]
@@ -131,5 +138,12 @@ class PineconeVectorStore(VectorStore):
         return chunks
 
     def count(self) -> int:
-        namespaces = self._ensure().describe_index_stats().namespaces or {}
-        return int((namespaces.get(self._namespace) or {}).get("vector_count", 0))
+        index = self._ensure()
+        stats_ns = (index.describe_index_stats().namespaces or {}).get(self._namespace) or {}
+        reported = int(stats_ns.get("vector_count", 0))
+        if reported:
+            return reported
+        # Serverless index stats lag behind recent upserts; double-check a zero
+        # report with a direct probe so fresh data is never mistaken for empty.
+        probe = index.query(vector=[0.0] * self._dimension, top_k=1, namespace=self._namespace)
+        return len(probe.matches or [])

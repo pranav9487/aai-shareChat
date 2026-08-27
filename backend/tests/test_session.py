@@ -7,7 +7,6 @@ in-process logic (rule 03, adversarial).
 from __future__ import annotations
 
 import pytest
-
 from app.services.access_control import Role, User
 from app.services.session import (
     HIDDEN_MESSAGE,

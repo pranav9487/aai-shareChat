@@ -18,9 +18,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from app.vectorstore.base import DefaultEmbedder, EmbedFn, RetrievedChunk, VectorStore
-from app.vectorstore.base import _require_equal_lengths  # noqa: PLC2701 - shared helper
-
+from app.vectorstore.base import (
+    DefaultEmbedder,
+    EmbedFn,
+    RetrievedChunk,
+    VectorStore,
+    _require_equal_lengths,  # noqa: PLC2701 - shared helper
+)
 
 #: Reserved metadata key carrying the chunk text (Pinecone has no separate field).
 TEXT_KEY = "text"
@@ -129,4 +133,3 @@ class PineconeVectorStore(VectorStore):
     def count(self) -> int:
         namespaces = self._ensure().describe_index_stats().namespaces or {}
         return int((namespaces.get(self._namespace) or {}).get("vector_count", 0))
-

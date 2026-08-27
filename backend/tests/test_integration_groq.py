@@ -115,4 +115,3 @@ def test_idempotent_reingest_real_store(tmp_path: Path, indexed_store) -> None:
     second = service.ingest_directory(docs_dir)
     assert first["files"] == second["files"]
     assert store.count() == first["chunks"] == second["chunks"]
-

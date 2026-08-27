@@ -6,9 +6,9 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT / "backend"))
 
-from app.config.settings import Settings
-from app.vectorstore.pinecone_client import PineconeVectorStore
-from app.services.rag.ingestion import IngestionService, ParsedDocument
+from app.config.settings import Settings  # noqa: E402 - needs sys.path setup above
+from app.services.rag.ingestion import IngestionService, ParsedDocument  # noqa: E402
+from app.vectorstore.pinecone_client import PineconeVectorStore  # noqa: E402
 
 HANDBOOK_PATH = PROJECT_ROOT / "documents" / "Nexora Technologies Pvt. Ltd.md"
 OUTPUT_DIR = PROJECT_ROOT / "documents" / "generated_test_documents"
@@ -44,6 +44,7 @@ SECTION_ROLES = {
     28: ("general", "Frequently Asked Questions"),
 }
 
+
 def main():
     if not HANDBOOK_PATH.exists():
         print(f"Error: {HANDBOOK_PATH} not found.")
@@ -54,45 +55,48 @@ def main():
 
     # Split by '# ' at start of lines (only top-level "# N. Title" headers,
     # never "## N.N." subsection headers, which keep a double '#').
-    sections = re.split(r'\n# ', '\n' + content)
-    
+    sections = re.split(r"\n# ", "\n" + content)
+
     parsed_docs = []
-    
+
     for section in sections:
         section = section.strip()
         if not section:
             continue
-        
+
         # Check if this matches a section number
-        match = re.match(r'^(\d+)\.\s+(.*)', section)
+        match = re.match(r"^(\d+)\.\s+(.*)", section)
         if not match:
             # Might be the title of the document itself or other non-section header
             continue
-            
+
         sec_num = int(match.group(1))
         sec_content = section
-        
+
         if sec_num in SECTION_ROLES:
             access_level, title = SECTION_ROLES[sec_num]
-            file_name = f"nexora_{sec_num:02d}_{title.lower().replace(' ', '_').replace('/', '_')}.md"
-            
+            safe_title = title.lower().replace(" ", "_").replace("/", "_")
+            file_name = f"nexora_{sec_num:02d}_{safe_title}.md"
+
             # Format markdown with front matter
             front_matter = f"---\ntitle: {title}\naccess_level: {access_level}\n---\n\n"
             sec_markdown = front_matter + sec_content
-            
+
             # Write to disk (ensure the corpus directory exists — a clean
             # checkout may not contain it yet).
             OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
             target_path = OUTPUT_DIR / file_name
             target_path.write_text(sec_markdown, encoding="utf-8")
-            print(f"Wrote section {sec_num} to {target_path.name} with access_level: {access_level}")
-            
-            parsed_docs.append(ParsedDocument(
-                source=file_name,
-                title=title,
-                access_level=access_level,
-                text=sec_content
-            ))
+            print(
+                f"Wrote section {sec_num} to {target_path.name} "
+                f"with access_level: {access_level}"
+            )
+
+            parsed_docs.append(
+                ParsedDocument(
+                    source=file_name, title=title, access_level=access_level, text=sec_content
+                )
+            )
 
     if not parsed_docs:
         print("No numbered policy sections found in the handbook; nothing to ingest.")
@@ -117,7 +121,11 @@ def main():
         total_chunks += chunks
         print(f"Ingested {doc.source} ({chunks} chunks)")
 
-    print(f"\nSuccessfully ingested {len(parsed_docs)} documents into ChromaDB ({total_chunks} total chunks).")
+    print(
+        f"\nSuccessfully ingested {len(parsed_docs)} documents "
+        f"into ChromaDB ({total_chunks} total chunks)."
+    )
+
 
 if __name__ == "__main__":
     main()

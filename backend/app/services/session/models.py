@@ -23,9 +23,7 @@ from app.services.access_control.models import Role
 #: Canonical, non-leaky replacement for a message whose content the viewer is
 #: not permitted to read (mirrors how ACCESS_DENIED_ANSWER avoids exposing
 #: forbidden content instead of showing "not found").
-HIDDEN_MESSAGE: Final[
-    str
-] = "This message is not visible under your access permissions."
+HIDDEN_MESSAGE: Final[str] = "This message is not visible under your access permissions."
 
 
 @dataclass(frozen=True)
@@ -57,12 +55,10 @@ class SessionMessage:
         question: str,
         answer: str,
         sources: tuple[dict, ...] = (),
-    ) -> "SessionMessage":
+    ) -> SessionMessage:
         """Construct a message, deriving ``access_levels`` from *sources*."""
         levels = frozenset(
-            str(source.get("access_level"))
-            for source in sources
-            if source.get("access_level")
+            str(source.get("access_level")) for source in sources if source.get("access_level")
         )
         return cls(
             message_id=uuid.uuid4().hex,

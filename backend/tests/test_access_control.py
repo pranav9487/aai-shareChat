@@ -58,9 +58,9 @@ class TestInMemoryUserDirectory:
         directory = InMemoryUserDirectory()
         guest = directory.get_user("guest")
         assert guest.role == Role.EMPLOYEE
-        assert guest.allowed_tiers == {"general"}, (
-            "guest must not be able to read hr/restricted/management tiers"
-        )
+        assert guest.allowed_tiers == {
+            "general"
+        }, "guest must not be able to read hr/restricted/management tiers"
 
     def test_unknown_id_raises_lookup_error(self) -> None:
         directory = InMemoryUserDirectory()

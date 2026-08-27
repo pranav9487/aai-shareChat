@@ -39,9 +39,7 @@ class InMemorySessionStore:
 
     def __init__(self, sessions: Mapping[str, Session] | None = None) -> None:
         self._sessions: dict[str, Session] = (
-            {sid: self._copy(session) for sid, session in sessions.items()}
-            if sessions
-            else {}
+            {sid: self._copy(session) for sid, session in sessions.items()} if sessions else {}
         )
         self._lock = threading.RLock()
 

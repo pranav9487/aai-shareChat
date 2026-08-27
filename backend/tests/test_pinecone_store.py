@@ -11,8 +11,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 
 import pytest
-
-from app.vectorstore.base import RetrievedChunk
 from app.vectorstore.pinecone_client import PineconeVectorStore
 
 
@@ -84,11 +82,14 @@ def test_upsert_carries_text_in_metadata_and_embeds(store) -> None:
     store_, index = store
     n = store_.upsert_chunks(
         ["A chunk", "B chunk"],
-        [{"source": "a.md", "access_level": "hr", "chunk_index": 0}, {"source": "a.md", "access_level": "hr", "chunk_index": 1}],
+        [
+            {"source": "a.md", "access_level": "hr", "chunk_index": 0},
+            {"source": "a.md", "access_level": "hr", "chunk_index": 1},
+        ],
         ["a.md::0", "a.md::1"],
     )
     assert n == 2
-    (vectors, namespace), = index.upserts
+    ((vectors, namespace),) = index.upserts
     assert namespace == "ns"
     assert vectors[0][0] == "a.md::0"
     assert vectors[0][2]["text"] == "A chunk"
@@ -140,7 +141,7 @@ def test_score_mapped_to_distance_and_sorted_nearest_first(store) -> None:
 def test_delete_source_filters_by_source(store) -> None:
     store_, index = store
     store_.delete_source("a.md")
-    (filter_, namespace), = index.deletes
+    ((filter_, namespace),) = index.deletes
     assert filter_ == {"source": "a.md"}
     assert namespace == "ns"
 

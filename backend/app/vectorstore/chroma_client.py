@@ -23,4 +23,3 @@ from app.vectorstore.base import (  # noqa: F401 - compatibility re-exports
 )
 from app.vectorstore.inmemory import InMemoryVectorStore  # noqa: F401
 from app.vectorstore.pinecone_client import PineconeVectorStore  # noqa: F401
-

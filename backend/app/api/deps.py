@@ -90,11 +90,10 @@ def get_current_user(
         if x_user_role:
             try:
                 from app.services.access_control.models import Role, User
+
                 role_enum = Role(x_user_role.strip().lower())
                 return User(
-                    user_id=x_user_id.strip(),
-                    display_name=x_user_id.strip(),
-                    role=role_enum
+                    user_id=x_user_id.strip(), display_name=x_user_id.strip(), role=role_enum
                 )
             except ValueError:
                 pass

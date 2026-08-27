@@ -9,10 +9,9 @@ The contract now is an actionable HTTP 503.
 from __future__ import annotations
 
 import pytest
-from fastapi import HTTPException
-
 from app.api.deps import _build_pipeline
 from app.config.settings import Settings
+from fastapi import HTTPException
 
 
 def _settings(tmp_path, groq_api_key: str) -> Settings:
@@ -49,4 +48,3 @@ def test_valid_config_builds_pipeline_without_network(tmp_path) -> None:
     pipeline = _build_pipeline(_settings(tmp_path, groq_api_key="test-key"))
 
     assert pipeline is not None
-

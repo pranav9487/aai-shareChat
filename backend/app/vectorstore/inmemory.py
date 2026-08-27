@@ -13,8 +13,12 @@ from __future__ import annotations
 import math
 from collections.abc import Sequence
 
-from app.vectorstore.base import EmbedFn, RetrievedChunk, VectorStore
-from app.vectorstore.base import _require_equal_lengths  # noqa: PLC2701 - shared helper
+from app.vectorstore.base import (
+    EmbedFn,
+    RetrievedChunk,
+    VectorStore,
+    _require_equal_lengths,  # noqa: PLC2701 - shared helper
+)
 
 
 def _cosine(a: Sequence[float], b: Sequence[float]) -> float:
@@ -35,11 +39,7 @@ class InMemoryVectorStore(VectorStore):
         self._chunks: dict[str, tuple[str, dict, list[float]]] = {}
 
     def delete_source(self, source: str) -> None:
-        doomed = [
-            cid
-            for cid, (_, meta, _) in self._chunks.items()
-            if meta.get("source") == source
-        ]
+        doomed = [cid for cid, (_, meta, _) in self._chunks.items() if meta.get("source") == source]
         for cid in doomed:
             del self._chunks[cid]
 
@@ -65,9 +65,7 @@ class InMemoryVectorStore(VectorStore):
         if allowed_levels is not None:
             allowed = set(allowed_levels)
             candidates = [
-                (t, m, v)
-                for t, m, v in self._chunks.values()
-                if m.get("access_level") in allowed
+                (t, m, v) for t, m, v in self._chunks.values() if m.get("access_level") in allowed
             ]
         else:
             candidates = list(self._chunks.values())

@@ -240,7 +240,8 @@ def test_viewer_without_permission_gets_non_leaky_placeholder(
     client: TestClient, fake_pipeline: FakePipeline
 ) -> None:
     fake_pipeline.result = QueryResult(
-        answer="the executive bonus formula", sources=[{"name": "m.md", "access_level": "management"}]
+        answer="the executive bonus formula",
+        sources=[{"name": "m.md", "access_level": "management"}],
     )
     client.post(
         "/api/query",
@@ -248,7 +249,7 @@ def test_viewer_without_permission_gets_non_leaky_placeholder(
         headers={"X-User-ID": "mgr"},
     )
 
-    response = client.get("/sessions/sess-1", headers={"X-User-ID": "emp"})
+    response = client.get("/api/sessions/sess-1", headers={"X-User-ID": "emp"})
     assert response.status_code == 200
     views = response.json()["messages"]
     assert len(views) == 1
@@ -270,7 +271,7 @@ def test_author_always_reads_their_own_message(
         headers={"X-User-ID": "mgr"},
     )
 
-    response = client.get("/sessions/sess-1", headers={"X-User-ID": "mgr"})
+    response = client.get("/api/sessions/sess-1", headers={"X-User-ID": "mgr"})
     assert response.status_code == 200
     views = response.json()["messages"]
     assert views[0]["visible"] is True
@@ -289,18 +290,18 @@ def test_superior_peer_reads_restricted_message(
         headers={"X-User-ID": "mgr"},
     )
     # An executive (who outranks a manager) may read the manager's answer.
-    response = client.get("/sessions/sess-1", headers={"X-User-ID": "exe"})
+    response = client.get("/api/sessions/sess-1", headers={"X-User-ID": "exe"})
     assert response.status_code == 200
     assert response.json()["messages"][0]["visible"] is True
     assert response.json()["messages"][0]["answer"] == "management answer"
 
 
 def test_session_read_requires_identity(client: TestClient) -> None:
-    response = client.get("/sessions/sess-1")
+    response = client.get("/api/sessions/sess-1")
     assert response.status_code == 401
 
 
 def test_session_read_unknown_session_is_404_non_leaky(client: TestClient) -> None:
-    response = client.get("/sessions/nope", headers={"X-User-ID": "emp"})
+    response = client.get("/api/sessions/nope", headers={"X-User-ID": "emp"})
     assert response.status_code == 404
     assert "nope" not in response.json()["detail"]

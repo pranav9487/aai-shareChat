@@ -35,3 +35,6 @@ npm-debug.log*
 # Generated RAG test corpus (recreate via: python documents/generate_test_documents.py)
 documents/generated_test_documents/
 
+
+# Local vector-store runtime data
+chroma_db/

@@ -17,6 +17,7 @@ from app.services.session import (
     is_message_visible,
     visible_messages,
 )
+from app.services.session.store_supabase import SupabaseSessionStore
 
 
 def _make_user(user_id: str, role: Role) -> User:
@@ -68,44 +69,68 @@ def test_build_without_sources_has_no_access_levels() -> None:
     assert message.access_levels == frozenset()
 
 
-# --- InMemorySessionStore ---
+# --- SessionStore protocol conformance (ADR-0008) ---
+# Every behavioral test below runs against BOTH implementations: the in-memory
+# default and the Supabase-backed store with an offline fake client. The two
+# must be indistinguishable from the callers' perspective.
 
 
-def test_get_or_create_returns_stable_session() -> None:
-    store = InMemorySessionStore()
+@pytest.fixture(params=["inmemory", "supabase"])
+def store(request, fake_supabase):  # noqa: ANN001, ANN202 - pytest fixtures
+    if request.param == "inmemory":
+        return InMemorySessionStore()
+    return SupabaseSessionStore(fake_supabase)
+
+
+def test_get_or_create_returns_stable_session(store) -> None:
     first = store.get_or_create("s1")
     second = store.get_or_create("s1")
     assert first.session_id == second.session_id == "s1"
 
 
-def test_get_unknown_session_raises() -> None:
-    store = InMemorySessionStore()
+def test_get_unknown_session_raises(store) -> None:
     with pytest.raises(SessionNotFoundError):
         store.get("missing")
 
 
-def test_add_message_appends_to_the_session() -> None:
-    store = InMemorySessionStore()
+def test_add_message_appends_to_the_session(store) -> None:
     message = _msg(MANAGER)
     store.add_message("s1", message)
     session = store.get("s1")
     assert session.messages == [message]
 
 
-def test_blank_session_id_is_rejected() -> None:
-    store = InMemorySessionStore()
+def test_add_message_is_visible_on_fresh_read(store) -> None:
+    """Round-trip fidelity: a re-read reconstructs the exact domain objects."""
+    message = _msg(MANAGER, answer="bonus formula", levels={"management"})
+    store.add_message("s1", message)
+    reread = store.get_or_create("s1").messages
+    assert reread == [message]
+    assert reread[0].sender_role is Role.MANAGER
+    assert reread[0].access_levels == {"management"}
+    assert reread[0].sources == ({"access_level": "management"},)
+
+
+def test_blank_session_id_is_rejected(store) -> None:
     with pytest.raises(ValueError):
         store.get_or_create("   ")
     with pytest.raises(ValueError):
         store.add_message("", _msg(MANAGER))
 
 
-def test_store_isolates_sessions() -> None:
-    store = InMemorySessionStore()
+def test_store_isolates_sessions(store) -> None:
     store.add_message("s1", _msg(EMPLOYEE))
     store.add_message("s2", _msg(MANAGER, levels={"management"}))
     assert len(store.get("s1").messages) == 1
     assert len(store.get("s2").messages) == 1
+
+
+def test_messages_keep_chronological_order(store) -> None:
+    first = _msg(EMPLOYEE, question="first")
+    second = _msg(MANAGER, question="second")
+    store.add_message("s1", first)
+    store.add_message("s1", second)
+    assert [m.question for m in store.get("s1").messages] == ["first", "second"]
 
 
 # --- Visibility rules ---

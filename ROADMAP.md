@@ -33,6 +33,18 @@ ADR-0006.
 - Perform retrieval according to the current user's access permissions.
 - Return a security-based response when information cannot be answered due to access restrictions.
 
+### 5. Move the vector store to Pinecone — ✅ DONE (2026-08-27, ADR-0007)
+Implemented: replaced ChromaDB with a hosted Pinecone (serverless, cosine)
+index behind a new vendor-agnostic `VectorStore` protocol
+(`app/vectorstore/base.py`); `PineconeVectorStore` (lazy/offline-safe
+construction, score→distance mapping, server-side `access_level` `$in`
+filter); local MiniLM-L6-v2 embeddings via FastEmbed (no chromadb dependency);
+offline unit tests moved to an in-memory store; integration test now key-gated
+on `PINECONE_API_KEY` + `GROQ_API_KEY`. See ADR-0007.
+- [x] Use Pinecone instead of ChromaDB.
+- [x] Add the Pinecone key/config to `.env.example`.
+- [x] Keep unit tests 100% green and offline.
+
 ### Next
 
 #### v1. Build the React Frontend — ✅ DONE (2026-08-26, branch `feature/frontend-rebuild`)

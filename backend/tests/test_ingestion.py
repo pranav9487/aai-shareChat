@@ -21,7 +21,6 @@ MULTI_CHUNK_TEXT = "".join(
 
 def make_settings(tmp_path: Path) -> Settings:
     return Settings(
-        chroma_persist_dir=tmp_path / "db",
         documents_dir=tmp_path / "docs",
         chunk_size=500,
         chunk_overlap=50,
@@ -126,7 +125,7 @@ def test_ensure_corpus_populates_empty_store_then_noops(store, tmp_path: Path) -
 
     docs_dir = tmp_path / "docs"
     write_documents(docs_dir)
-    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=docs_dir)
+    settings = Settings(documents_dir=docs_dir)
 
     first = ensure_corpus(store, settings)
     assert first is not None
@@ -143,7 +142,7 @@ def test_ensure_corpus_skips_when_docs_dir_missing(store, tmp_path: Path) -> Non
     from app.config.settings import Settings
     from app.services.rag.ingestion import ensure_corpus
 
-    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=tmp_path / "nope")
+    settings = Settings(documents_dir=tmp_path / "nope")
 
     assert ensure_corpus(store, settings) is None
 
@@ -154,7 +153,7 @@ def test_ensure_corpus_skips_already_populated_store(store, tmp_path: Path) -> N
 
     docs_dir = tmp_path / "docs"
     write_documents(docs_dir)
-    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=docs_dir)
+    settings = Settings(documents_dir=docs_dir)
 
     doc = ParsedDocument(
         source="preexisting.md",

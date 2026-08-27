@@ -29,11 +29,18 @@ class Settings(BaseSettings):
     groq_model: str = "qwen/qwen3-32b"
 
     # --- Storage / data locations (defaults resolved against repo root) ---
-    chroma_persist_dir: Path = PROJECT_ROOT / "chroma_db"
     documents_dir: Path = PROJECT_ROOT / "documents" / "generated_test_documents"
 
+    # --- Vector store: Pinecone (hosted) ---
+    pinecone_api_key: str = ""
+    pinecone_index_name: str = "internal-docs"
+    pinecone_namespace: str = ""
+    pinecone_cloud: str = "aws"
+    pinecone_region: str = "us-east-1"
+    # Local MiniLM-L6-v2 embeddings are 384-dim; the Pinecone index must match.
+    embedding_dim: int = 384
+
     # --- Ingestion / retrieval tuning ---
-    collection_name: str = "internal_docs"
     chunk_size: int = 800
     chunk_overlap: int = 100
     retrieval_top_k: int = 5

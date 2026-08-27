@@ -16,10 +16,11 @@ from app.config.settings import Settings
 
 
 def _settings(tmp_path, groq_api_key: str) -> Settings:
+    # NOTE: tests construct PipelineVectorStore lazily, so no Pinecone key or
+    # network is required at build time.
     return Settings(
         groq_api_key=groq_api_key,
         groq_model="test-model",
-        chroma_persist_dir=tmp_path / "db",
     )
 
 

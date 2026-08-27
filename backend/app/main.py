@@ -16,7 +16,7 @@ from fastapi import FastAPI
 from app.api.routes.query import router as query_router
 from app.config.settings import get_settings
 from app.services.rag.ingestion import ensure_corpus
-from app.vectorstore.chroma_client import ChromaVectorStore
+from app.vectorstore.pinecone_client import PineconeVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +26,13 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     """Auto-provision the document corpus so a fresh checkout is answerable."""
     settings = get_settings()
     try:
-        store = ChromaVectorStore(
-            persist_dir=settings.chroma_persist_dir,
-            collection_name=settings.collection_name,
+        store = PineconeVectorStore(
+            api_key=settings.pinecone_api_key,
+            index_name=settings.pinecone_index_name,
+            namespace=settings.pinecone_namespace,
+            cloud=settings.pinecone_cloud,
+            region=settings.pinecone_region,
+            dimension=settings.embedding_dim,
         )
         summary = ensure_corpus(store, settings)
         if summary is not None:

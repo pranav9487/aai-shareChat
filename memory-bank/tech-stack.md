@@ -23,8 +23,8 @@
 
 ## Retrieval
 - RAG architecture: Yes
-- Vector database: pinecone (persistent client, cosine space)
-- Embeddings model: pinecone default (all-MiniLM-L6-v2 ONNX) behind injectable `EmbedFn` (ADR-0002)
+- Vector database: Pinecone (hosted, serverless index, cosine space) — see ADR-0007
+- Embeddings model: local MiniLM-L6-v2 (ONNX via FastEmbed, 384-dim) behind the injectable `EmbedFn` (ADR-0002, kept in ADR-0007); the Pinecone index is created to match (dim 384)
 
 ## Database
 - Supabase
@@ -90,7 +90,8 @@ All secrets, credentials, API keys, and service configuration must be stored in 
 Expected values include:
 - Groq API key (`GROQ_API_KEY`)
 - Groq model id (`GROQ_MODEL`)
-- pinecone persistence dir (``)
+- Pinecone API key (`PINECONE_API_KEY`)
+- Pinecone index name / namespace / cloud / region (`PINECONE_INDEX_NAME`, `PINECONE_NAMESPACE`, `PINECONE_CLOUD`, `PINECONE_REGION`) — see ADR-0007
 - Documents dir (`DOCUMENTS_DIR`)
 - Optional user-registry seed JSON (`ACCESS_CONTROL_SEED_JSON`) — ADR-0004
 - Supabase URL / keys (future items)

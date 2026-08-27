@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from pydantic import BaseModel, Field
 
 from app.services.rag.retriever import Retriever
-from app.vectorstore.chroma_client import RetrievedChunk
+from app.vectorstore.base import RetrievedChunk
 
 NOT_FOUND_ANSWER = "The answer was not found in the documents."
 ACCESS_DENIED_ANSWER = "Access denied: you do not have permission to view this information."

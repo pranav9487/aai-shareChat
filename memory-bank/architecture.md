@@ -9,7 +9,7 @@ It uses:
 - FastAPI for the backend
 - LangChain for RAG and agent-related logic
 - Groq with the specified Qwen 27B model for LLM responses
-- ChromaDB for document retrieval
+- Pinecone (hosted vector database) for document retrieval — ADR-0007
 - Supabase for storing conversation and session-related data
 
 The system must safely handle follow-up questions in a shared session. A user must not receive information retrieved for another user if that information is outside their access permissions.

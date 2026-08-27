@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.config.settings import Settings, get_settings
-from app.vectorstore.chroma_client import ChromaVectorStore
+from app.vectorstore.base import VectorStore
 
 ALLOWED_ACCESS_LEVELS = ("general", "hr", "restricted", "management")
 
@@ -110,7 +110,7 @@ def parse_markdown_document(path: Path) -> ParsedDocument:
 class IngestionService:
     """Chunks parsed documents and upserts them into the vector store."""
 
-    def __init__(self, store: ChromaVectorStore, settings: Settings | None = None) -> None:
+    def __init__(self, store: VectorStore, settings: Settings | None = None) -> None:
         self._store = store
         self._settings = settings or get_settings()
 
@@ -168,13 +168,13 @@ class IngestionService:
         return summary
 
 
-def ensure_corpus(store: ChromaVectorStore, settings: Settings | None = None) -> dict[str, object] | None:
+def ensure_corpus(store: VectorStore, settings: Settings | None = None) -> dict[str, object] | None:
     """Ingest the configured corpus once if the collection is still empty.
 
-    Keeps the demo self-provisioning: a fresh checkout with an empty
-    ``CHROMA_PERSIST_DIR`` becomes answerable after the first server start,
-    with no manual ingest step. Idempotent — a populated collection is never
-    touched (explicit re-ingestion remains a manual operation).
+    Keeps the demo self-provisioning: an empty Pinecone index becomes
+    answerable after the first server start, with no manual ingest step.
+    Idempotent — a populated index is never touched (explicit re-ingestion
+    remains a manual operation).
 
     Returns the ingestion summary, or ``None`` when nothing was done
     (already populated, or the documents directory does not exist).

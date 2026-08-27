@@ -9,7 +9,7 @@ markers = [
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = ["chroma_db", "documents/generated_test_documents"]
+extend-exclude = ["documents/generated_test_documents"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B"]
@@ -22,4 +22,4 @@ select = ["E", "F", "W", "I", "UP", "B"]
 [tool.black]
 line-length = 100
 target-version = ["py311"]
-extend-exclude = "chroma_db"
+extend-exclude = "documents/generated_test_documents"

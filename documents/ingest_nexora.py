@@ -7,7 +7,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT / "backend"))
 
 from app.config.settings import Settings
-from app.vectorstore.chroma_client import ChromaVectorStore
+from app.vectorstore.pinecone_client import PineconeVectorStore
 from app.services.rag.ingestion import IngestionService, ParsedDocument
 
 HANDBOOK_PATH = PROJECT_ROOT / "documents" / "Nexora Technologies Pvt. Ltd.md"
@@ -98,11 +98,15 @@ def main():
         print("No numbered policy sections found in the handbook; nothing to ingest.")
         sys.exit(1)
 
-    print("\nConnecting to ChromaDB...")
+    print("\nConnecting to Pinecone...")
     settings = Settings()
-    store = ChromaVectorStore(
-        persist_dir=settings.chroma_persist_dir,
-        collection_name=settings.collection_name,
+    store = PineconeVectorStore(
+        api_key=settings.pinecone_api_key,
+        index_name=settings.pinecone_index_name,
+        namespace=settings.pinecone_namespace,
+        cloud=settings.pinecone_cloud,
+        region=settings.pinecone_region,
+        dimension=settings.embedding_dim,
     )
     ingestion = IngestionService(store, settings)
 

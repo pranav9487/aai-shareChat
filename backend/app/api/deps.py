@@ -13,7 +13,7 @@ from app.services.llm.groq_chain import GenerationError, make_generate
 from app.services.rag.pipeline import RAGPipeline
 from app.services.rag.retriever import Retriever
 from app.services.session.store import InMemorySessionStore
-from app.vectorstore.chroma_client import ChromaVectorStore
+from app.vectorstore.pinecone_client import PineconeVectorStore
 
 
 def _build_pipeline(settings: Settings) -> RAGPipeline:
@@ -24,9 +24,13 @@ def _build_pipeline(settings: Settings) -> RAGPipeline:
     ``GenerationError`` here, which previously escaped dependency resolution
     uncaught (root cause of the opaque "Request failed" UI state).
     """
-    store = ChromaVectorStore(
-        persist_dir=settings.chroma_persist_dir,
-        collection_name=settings.collection_name,
+    store = PineconeVectorStore(
+        api_key=settings.pinecone_api_key,
+        index_name=settings.pinecone_index_name,
+        namespace=settings.pinecone_namespace,
+        cloud=settings.pinecone_cloud,
+        region=settings.pinecone_region,
+        dimension=settings.embedding_dim,
     )
     retriever = Retriever(store, top_k=settings.retrieval_top_k)
     try:
@@ -44,7 +48,7 @@ def get_pipeline() -> RAGPipeline:
     """Build the default pipeline once per process.
 
     Tests override this dependency with ``app.dependency_overrides`` instead
-    of touching real ChromaDB/Groq; ``_build_pipeline`` is the testable core.
+    of touching real Pinecone/Groq; ``_build_pipeline`` is the testable core.
     """
     return _build_pipeline(get_settings())
 

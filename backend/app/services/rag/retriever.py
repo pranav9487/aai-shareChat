@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from app.vectorstore.chroma_client import ChromaVectorStore, RetrievedChunk
+from app.vectorstore.base import RetrievedChunk, VectorStore
 
 
 class Retriever:
     """Fetches the most similar stored chunks for a free-text query."""
 
-    def __init__(self, store: ChromaVectorStore, top_k: int = 5) -> None:
+    def __init__(self, store: VectorStore, top_k: int = 5) -> None:
         if top_k <= 0:
             raise ValueError(f"top_k must be a positive integer, got {top_k}")
         self._store = store

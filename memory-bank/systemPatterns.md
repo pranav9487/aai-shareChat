@@ -28,11 +28,12 @@
 - Vocabulary types are `StrEnum` with one mapping table (`ROLE_ALLOWED_TIERS`); ingestion's
   `ALLOWED_ACCESS_LEVELS` must stay identical to `AccessTier` values (test-enforced).
 - Config only via pydantic-settings + root `.env` (mirror in `.env.example`); bad seeds fail fast.
-- Security posture: permissions filter INSIDE the vector-store query (`where $in`), denial
+- Security posture: permissions filter INSIDE the vector-store query (`access_level` `$in` filter applied server-side), denial
   responses expose no sources/content, auth error details are fixed and non-leaky.
 
 ## Things to avoid
-- Routes touching ChromaDB/LangChain directly (always through the pipeline facade).
+- Routes touching Pinecone/LangChain directly (always through the pipeline facade).
 - Hardcoding model ids/keys/URLs or silently defaulting unknown access levels.
 - Reusing retrieved context across users/sessions — the core project invariant.
 - Hand-editing CHANGELOG.md; committing `generated_test_documents/`, `.venv/`, or logs.
+- Letting plain unit tests hit the hosted vector store (Pinecone) — use `InMemoryVectorStore` (ADR-0007).

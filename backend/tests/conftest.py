@@ -7,16 +7,15 @@ from __future__ import annotations
 
 import hashlib
 from collections.abc import Sequence
-from pathlib import Path
 
 import pytest
-from app.vectorstore.chroma_client import ChromaVectorStore
+from app.vectorstore.inmemory import InMemoryVectorStore
 
 _DIM = 64
 
 
 class FakeEmbedder:
-    """Deterministic hash-based embedder standing in for ChromaDB's MiniLM.
+    """Deterministic hash-based embedder standing in for the local MiniLM model.
 
     Tokens map to signed unit contributions by SHA-256, so texts sharing
     vocabulary end up close in cosine distance — enough for realistic
@@ -43,10 +42,6 @@ def fake_embedder() -> FakeEmbedder:
 
 
 @pytest.fixture
-def store(tmp_path: Path, fake_embedder: FakeEmbedder) -> ChromaVectorStore:
-    """Fresh persistent-in-tmp vector store wired to the fake embedder."""
-    return ChromaVectorStore(
-        persist_dir=tmp_path / "chroma",
-        collection_name="test_docs",
-        embed_fn=fake_embedder,
-    )
+def store(fake_embedder: FakeEmbedder) -> InMemoryVectorStore:
+    """Fresh offline vector store wired to the fake embedder (no network)."""
+    return InMemoryVectorStore(embed_fn=fake_embedder)

@@ -15,7 +15,7 @@ from langchain_core.runnables import Runnable
 
 from app.config.settings import Settings, get_settings
 from app.services.rag.pipeline import NOT_FOUND_ANSWER
-from app.vectorstore.chroma_client import RetrievedChunk
+from app.vectorstore.base import RetrievedChunk
 
 
 class GenerationError(RuntimeError):

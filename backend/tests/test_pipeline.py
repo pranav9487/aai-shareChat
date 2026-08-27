@@ -12,7 +12,7 @@ from app.services.rag.pipeline import (
     PipelineError,
     RAGPipeline,
 )
-from app.vectorstore.chroma_client import RetrievedChunk
+from app.vectorstore.base import RetrievedChunk
 
 
 class StubRetriever:

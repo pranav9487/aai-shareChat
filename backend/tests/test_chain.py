@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from app.config.settings import Settings
 from app.services.llm.groq_chain import GenerationError, format_context, make_generate
-from app.vectorstore.chroma_client import RetrievedChunk
+from app.vectorstore.base import RetrievedChunk
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableLambda
 

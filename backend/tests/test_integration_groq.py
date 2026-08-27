@@ -1,48 +1,76 @@
-"""Integration test: real ChromaDB embeddings + real Groq call.
+"""Integration test: real Pinecone embeddings/index + real Groq call.
 
-Auto-skipped unless ``GROQ_API_KEY`` is set, so plain CI runs (no key) stay
-100% green and offline. The first run also downloads the ONNX MiniLM model
-used by ChromaDB's default embedder (~80 MB) — that is expected.
+Auto-skipped unless both ``PINECONE_API_KEY`` and ``GROQ_API_KEY`` are set, so
+plain CI runs (no keys) stay 100% green and offline. The first run also
+downloads the ONNX MiniLM model used by the local embedder (~90 MB) — expected.
+The test creates/uses a uniquely-named serverless index and cleans up after
+itself by deleting the index.
 """
 
 from __future__ import annotations
 
 import os
+import uuid
 from pathlib import Path
 
 import pytest
 
 pytestmark = pytest.mark.integration
 
-_requires_key = pytest.mark.skipif(
-    not os.environ.get("GROQ_API_KEY"),
-    reason="GROQ_API_KEY not set; integration tests are skipped",
+_requires_keys = pytest.mark.skipif(
+    not (os.environ.get("PINECONE_API_KEY") and os.environ.get("GROQ_API_KEY")),
+    reason="PINECONE_API_KEY and GROQ_API_KEY not both set; integration tests skipped",
 )
 
 
-@_requires_key
-def test_full_roundtrip_with_real_components(tmp_path: Path) -> None:
+def _index_name() -> str:
+    """A unique per-run index so concurrent CI runs never collide."""
+    return f"aai-sharechat-test-{uuid.uuid4().hex[:8]}"
+
+
+@pytest.fixture
+def indexed_store():
+    from app.vectorstore.pinecone_client import PineconeVectorStore
+
+    index_name = _index_name()
+    store = PineconeVectorStore(
+        api_key=os.environ["PINECONE_API_KEY"],
+        index_name=index_name,
+        namespace="integration",
+        dimension=384,
+    )
+    try:
+        yield store
+    finally:
+        # Best-effort cleanup: drop the temporary index so concurrent CI runs
+        # never collide and no test data is left behind.
+        from pinecone import Pinecone
+
+        try:
+            Pinecone(api_key=os.environ["PINECONE_API_KEY"]).delete_index(index_name)
+        except Exception:
+            pass
+
+
+@_requires_keys
+def test_full_roundtrip_with_real_components(tmp_path: Path, indexed_store) -> None:
     from app.config.settings import Settings
     from app.services.llm.groq_chain import make_generate
     from app.services.rag.ingestion import IngestionService
     from app.services.rag.pipeline import ACCESS_DENIED_ANSWER, RAGPipeline
     from app.services.rag.retriever import Retriever
-    from app.vectorstore.chroma_client import ChromaVectorStore
 
     from documents.generate_test_documents import write_documents
 
     docs_dir = tmp_path / "docs"
-    db_dir = tmp_path / "db"
     write_documents(docs_dir)
 
     settings = Settings(
         groq_api_key=os.environ["GROQ_API_KEY"],
         groq_model=os.environ.get("GROQ_MODEL", "qwen/qwen3-32b"),
-        chroma_persist_dir=db_dir,
         documents_dir=docs_dir,
     )
-
-    store = ChromaVectorStore(persist_dir=db_dir, collection_name=settings.collection_name)
+    store = indexed_store
     summary = IngestionService(store, settings).ingest_directory(docs_dir)
     assert summary["files"] == 12
     assert store.count() >= 12
@@ -71,21 +99,20 @@ def test_full_roundtrip_with_real_components(tmp_path: Path) -> None:
     assert restricted.sources == []
 
 
-@_requires_key
-def test_idempotent_reingest_real_store(tmp_path: Path) -> None:
+@_requires_keys
+def test_idempotent_reingest_real_store(tmp_path: Path, indexed_store) -> None:
     from app.config.settings import Settings
     from app.services.rag.ingestion import IngestionService
-    from app.vectorstore.chroma_client import ChromaVectorStore
 
     from documents.generate_test_documents import write_documents
 
     docs_dir = tmp_path / "docs"
     write_documents(docs_dir)
-    settings = Settings(chroma_persist_dir=tmp_path / "db", documents_dir=docs_dir)
-    store = ChromaVectorStore(persist_dir=settings.chroma_persist_dir)
-    service = IngestionService(store, settings)
+    store = indexed_store
+    service = IngestionService(store, settings=Settings(documents_dir=docs_dir))
 
     first = service.ingest_directory(docs_dir)
     second = service.ingest_directory(docs_dir)
     assert first["files"] == second["files"]
     assert store.count() == first["chunks"] == second["chunks"]
+

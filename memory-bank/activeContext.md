@@ -3,15 +3,14 @@
 <!-- Update this at the end of every session. This is the first thing to read when resuming. -->
 
 ## Current focus
-Roadmap Now §3 (shared-session safety) IMPLEMENTED on new branch
-`feature/shared-sessions` (off main): backend `SessionStore` protocol +
-`InMemorySessionStore` under `app/services/session/`, `POST /api/query` now
-requires and logs `session_id` (author, role, question, answer, sources, drawn
-access_levels), and `GET /api/sessions/{id}` returns the transcript filtered
-per the requesting viewer — non-visible answers return a non-leaky placeholder
-and empty sources, never another user's retrieved content. Frontend mirrors it:
-`getSession` client + a `SharedTranscript` panel with a per-viewer Refresh.
-ADR-0006. **Committed locally, NOT merged/pushed — awaits review (rules 02/05).**
+Backend is LIVE-VERIFIED end-to-end (2026-08-27): Pinecone retrieval + Groq
+(`qwen/qwen3.6-27b`) answer real questions with per-user RBAC filtering —
+priya(hr) gets hr answers + sources, guest(employee) stays general-only,
+unknown IDs → 403, missing header → 401. All fixes are on `main`
+(b1a280d…10b6b9d, incl. lint/format pass and `.gitignore` chroma_db).
+Next: merge `feature/shared-sessions` (session feature is already wired into
+main's query path — resolve the overlap), then point the frontend transcript
+panel at `/api/sessions/{id}` (tests there already use the `/api` prefix).
 
 ## Recent decisions
 - ADR-0006: session persistence lives behind a `SessionStore` protocol seam
@@ -33,16 +32,16 @@ ADR-0006. **Committed locally, NOT merged/pushed — awaits review (rules 02/05)
 - Backend run command fix stands: `uvicorn app.main:app --app-dir backend`.
 
 ## Blockers / open questions
-- No `GROQ_API_KEY` locally → live chat answers impossible (UI shows styled Request-failed);
-  integration tests auto-skip. Add key to `.env` when ready.
-- The POSIX shell (`bash`) for running git/pytest/npm is currently BROKEN in this
-  environment (spawn `bash.exe ENOENT`), so the git branch/commit and test suite
-  could NOT be executed here — a working terminal (or git-enabled environment)
-  is required to validate and commit.
-- Nexora handbook ingestion (`documents/ingest_nexora.py`, hardened 2026-08-27) is
-  ready but UNRUN for the same reason — ChromaDB persists to `chroma_db/` (gitignored)
-  only once the script executes with a working terminal.
-- Exact Groq model id ("Qwen 27B") still unverified vs GROQ_MODEL default.
+- RESOLVED 2026-08-27: shell works, `GROQ_API_KEY` present, `GROQ_MODEL` verified as
+  `qwen/qwen3.6-27b`, nexora corpus ingested into the Pinecone index `internal-docs`
+  (28 docs / 31 chunks + the earlier demo corpus; both corpora coexist in the index).
+- `feature/shared-sessions` branch vs main overlap: main already contains session
+  store/visibility + session_id requirement (user commits); review the branch for any
+  remaining delta before merging or deleting it (needs explicit user OK, rule 05).
+- Old demo corpus and nexora corpus both live in the same Pinecone index; consider a
+  single canonical corpus + re-ingest policy later.
+- Dependabot CI bumps still pending; frontend transcript panel not yet wired to the
+  `/api/sessions/{id}` route.
 - CHANGELOG regeneration tooling still undecided; file remains [Unreleased]-empty (never
   hand-edited per rule).
 - Three Dependabot PRs open (actions bumps). No frontend CI steps yet.

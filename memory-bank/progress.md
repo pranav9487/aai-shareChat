@@ -7,6 +7,20 @@
 
 ## Done
 
+- backend-live-debug — end-to-end live verification of POST /api/query after the Pinecone
+  pivot; fixed the full failure chain on main (b1a280d…10b6b9d): 403 "unknown user"
+  (frontend/backend user-list drift → `guest` seeded on both sides, employee-only); bare 500 on
+  missing GROQ key → actionable 503 guard in deps; `ensure_corpus` auto-provision wired into
+  lifespan; session-view tests drifted to `/sessions/…` → corrected to `/api/sessions/…`;
+  `pinecone` + `fastembed` SDKs were pinned but never installed into `.venv` → installed;
+  Pinecone `delete_source` 404s on never-upserted serverless namespaces → treated as
+  nothing-to-delete; `count()` trusted lagging `describe_index_stats` (0 for a populated index)
+  → zero-report is probed with a non-zero vector; `GROQ_MODEL` `qwen/qwen3-32b` (dead id) →
+  verified `qwen/qwen3.6-27b` in `.env`; qwen3 `<think>` blocks stripped from answers.
+  LIVE-VERIFIED: priya(hr) → "accrue 25 vacation days" + hr source; guest(employee) → filtered
+  to general tier only; mallory → 403; no header → 401. Full pytest suite + ruff + black green.
+  Regression tests added at each layer (test_deps, test_pinecone_store ×3, test_chain,
+  test_access_control, test_api paths) — 2026-08-27.
 - nexora-ingestion — prepared chunk/embed/load of `documents/Nexora Technologies
   Pvt. Ltd.md`: `documents/ingest_nexora.py` splits the handbook into its 28
   numbered policy sections, assigns per-section RBAC access levels, writes each as

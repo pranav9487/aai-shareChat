@@ -7,12 +7,15 @@ from functools import lru_cache
 from fastapi import Depends, Header, HTTPException
 
 from app.config.settings import Settings, get_settings
+from app.database.supabase_client import resolve_supabase_client
 from app.services.access_control import User, UserDirectory, UserNotFoundError
-from app.services.access_control.directory import InMemoryUserDirectory, build_directory
+from app.services.access_control.directory import build_directory
+from app.services.access_control.directory_supabase import SupabaseUserDirectory
 from app.services.llm.groq_chain import GenerationError, make_generate
 from app.services.rag.pipeline import RAGPipeline
 from app.services.rag.retriever import Retriever
-from app.services.session.store import InMemorySessionStore
+from app.services.session.store import InMemorySessionStore, SessionStore
+from app.services.session.store_supabase import SupabaseSessionStore
 from app.vectorstore.pinecone_client import PineconeVectorStore
 
 
@@ -53,20 +56,41 @@ def get_pipeline() -> RAGPipeline:
     return _build_pipeline(get_settings())
 
 
-@lru_cache
-def get_user_directory() -> InMemoryUserDirectory:
-    """Build the user directory once per process (ADR-0004)."""
-    return build_directory(get_settings().access_control_seed_json)
+def _build_user_directory(settings: Settings) -> UserDirectory:
+    """Select the directory implementation from *settings* (ADR-0008)."""
+    client = resolve_supabase_client(settings)
+    if client is not None:
+        return SupabaseUserDirectory(client)
+    return build_directory(settings.access_control_seed_json)
 
 
-@lru_cache
-def get_session_service() -> InMemorySessionStore:
-    """Shared in-memory session store for the process (ADR-0006).
-
-    Tests override this dependency with ``app.dependency_overrides`` to get a
-    fresh store per test, exactly as they do for ``get_pipeline``.
-    """
+def _build_session_store(settings: Settings) -> SessionStore:
+    """Select the session-store implementation from *settings* (ADR-0008)."""
+    client = resolve_supabase_client(settings)
+    if client is not None:
+        return SupabaseSessionStore(client)
     return InMemorySessionStore()
+
+
+@lru_cache
+def get_user_directory() -> UserDirectory:
+    """Build the user directory once per process (ADR-0004 / ADR-0008).
+
+    Served from Supabase when configured, else from the in-memory seed
+    registry; both implement the same protocol.
+    """
+    return _build_user_directory(get_settings())
+
+
+@lru_cache
+def get_session_service() -> SessionStore:
+    """Shared session store for the process (ADR-0006 / ADR-0008).
+
+    Durable Supabase-backed store when configured, else the in-memory store;
+    both implement the same protocol, so tests keep overriding this dependency
+    with a fresh in-memory store per test.
+    """
+    return _build_session_store(get_settings())
 
 
 def get_current_user(

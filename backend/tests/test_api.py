@@ -91,6 +91,61 @@ def test_health_endpoint(client: TestClient) -> None:
     assert response.json() == {"status": "ok"}
 
 
+def test_follow_up_question_is_rewritten_before_retrieval(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    """A deictic follow-up in a session is rewritten using the requester's
+    own prior question; the pipeline receives the standalone form."""
+    # First: an explicit, non-follow-up question (passes through).
+    _post(client, question="How many vacation days do employees get?")
+    assert fake_pipeline.calls == [("How many vacation days do employees get?", ["general"])]
+
+    # Second: a deictic follow-up in the same session.
+    _post(client, question="what about part-time?")
+    assert fake_pipeline.calls[-1][0] == (
+        "How many vacation days do employees get? what about part-time?"
+    )
+
+
+def test_follow_up_logs_original_question_to_session(
+    client: TestClient, sessions: InMemorySessionStore
+) -> None:
+    _post(client, question="How many vacation days do employees get?")
+    _post(client, question="what about part-time?")
+    logged = [m.question for m in sessions.get("sess-1").messages]
+    # The transcript keeps exactly what the user typed, never the rewrite.
+    assert logged == [
+        "How many vacation days do employees get?",
+        "what about part-time?",
+    ]
+
+
+def test_follow_up_never_uses_another_users_question(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    """A follow-up by one user must not be rewritten against another user's
+    question, even in the same shared session (core invariant)."""
+    # 'hrp' asks a question in the shared session first.
+    _post(client, user_id="hrp", question="What is the executive compensation structure?")
+    # 'emp' then posts a short follow-up with no prior question of their own.
+    _post(client, user_id="emp", question="what about part-time?")
+    # Because emp has no prior question, the follow-up passes through untransformed.
+    assert fake_pipeline.calls[-1][0] == "what about part-time?"
+
+
+def test_follow_up_rewrite_still_honors_denial(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    """A rewritten follow-up that targets restricted content must still return
+    the canonical security decline, never leaked content."""
+    _post(client, question="How many vacation days do employees get?")
+    fake_pipeline.result = QueryResult(answer=ACCESS_DENIED_ANSWER, sources=[])
+    response = _post(client, question="what about the executive bonus?")
+    assert response.status_code == 200
+    assert response.json()["answer"] == ACCESS_DENIED_ANSWER
+    assert response.json()["sources"] == []
+
+
 def test_happy_path_forwards_caller_tiers(client: TestClient, fake_pipeline: FakePipeline) -> None:
     fake_pipeline.result = QueryResult(
         answer="25 days", sources=[{"source": "hr_vacation_policy.md"}]

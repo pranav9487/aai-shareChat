@@ -11,6 +11,7 @@ from app.database.supabase_client import resolve_supabase_client
 from app.services.access_control import User, UserDirectory, UserNotFoundError
 from app.services.access_control.directory import build_directory
 from app.services.access_control.directory_supabase import SupabaseUserDirectory
+from app.services.followup import FollowUpResolver, get_heuristic_resolver
 from app.services.llm.groq_chain import GenerationError, make_generate
 from app.services.rag.pipeline import RAGPipeline
 from app.services.rag.retriever import Retriever
@@ -54,6 +55,16 @@ def get_pipeline() -> RAGPipeline:
     of touching real Pinecone/Groq; ``_build_pipeline`` is the testable core.
     """
     return _build_pipeline(get_settings())
+
+
+@lru_cache
+def get_follow_up_resolver() -> FollowUpResolver:
+    """Shared follow-up resolver (ADR-0009).
+
+    Deterministic and offline today; tests override this dependency to assert
+    the route passes the right question to the pipeline.
+    """
+    return get_heuristic_resolver()
 
 
 def _build_user_directory(settings: Settings) -> UserDirectory:

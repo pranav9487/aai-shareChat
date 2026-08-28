@@ -3,19 +3,20 @@
 <!-- Update this at the end of every session. This is the first thing to read when resuming. -->
 
 ## Current focus
-Roadmap Next-v2 (Supabase persistence) IMPLEMENTED on branch
-`feature/supabase-persistence` (off main): `SupabaseSessionStore` +
-`SupabaseUserDirectory` behind the existing protocol seams, selected by
-`resolve_supabase_client` (both env vars set → durable; blank → in-memory;
-half-set → fail-fast). Schema ready in `supabase/schema.sql` — **user must
-create a Supabase project, run that SQL once, and fill SUPABASE_URL +
-SUPABASE_SERVICE_KEY in `.env` to activate durability**; until then behavior
-is unchanged (in-memory). Conformance suite proves both store implementations
-are behaviorally identical. Full suite + lint green. ADR-0008. **Committed
-locally, NOT merged/pushed — awaits review (rules 02/05).**
-After merge: remaining roadmap work is Now §4 (safe follow-up handling — the
-message rows already store exactly what it needs) and Next v3 (wire the
-frontend transcript panel to `/api/sessions/{id}`).
+Roadmap Now §4 (safe follow-up handling) IMPLEMENTED on branch
+`feature/follow-up-handling` (off main): `FollowUpResolver` protocol +
+deterministic `HeuristicFollowUpResolver` under `app/services/followup/`.
+Deictic/elliptical follow-ups are detected and rewritten (inlining only the
+requester's own prior question, passed `user_id` for defense-in-depth), then
+run through the existing permission-filtered retrieval — preserving the
+security decline / not-found paths. The original typed question is always
+logged to the session. Full suite green (8 unit + 4 route tests added),
+ruff/black clean, ADR-0009. **Committed locally, NOT yet merged/pushed — Merge
+decision pending (rules 02/05). Follow-up: finish the /commit push to origin
+or review/merge to main.**
+Unmerged-but-ready branches (content on main): feature/supabase-persistence,
+feature/follow-up-handling. Remaining roadmap: Next v3 — wire the frontend
+transcript panel to `/api/sessions/{id}` (backend + tests already in place).
 
 ## Recent decisions
 - ADR-0008: Supabase persistence behind the `SessionStore`/`UserDirectory`

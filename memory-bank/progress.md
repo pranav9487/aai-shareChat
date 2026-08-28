@@ -7,6 +7,17 @@
 
 ## Done
 
+- follow-up-handling — roadmap Now §4 (ADR-0009): `FollowUpResolver` protocol
+  seam + deterministic offline `HeuristicFollowUpResolver` in
+  `app/services/followup/`. Deictic/elliptical follow-ups detected
+  (short + deictic pronoun/connector or elliptical opener) and rewritten into
+  standalone questions by inlining only the requester's own prior question
+  (resolver filters by `user_id` — defense-in-depth beyond the route's
+  sender-filtered history). Rewritten questions run through the existing
+  permission-filtered retrieval, preserving `ACCESS_DENIED_ANSWER` /
+  `NOT_FOUND_ANSWER`; the original typed question is always logged. Full suite
+  green incl. 8 new unit tests + 4 route integration tests; ruff/black clean —
+  2026-08-27 (branch feature/follow-up-handling, NOT yet merged).
 - supabase-persistence — roadmap Next-v2 (ADR-0008): `SupabaseSessionStore` +
   `SupabaseUserDirectory` implement the existing `SessionStore`/`UserDirectory`
   protocols exactly (same exceptions, same frozen domain objects); selected in

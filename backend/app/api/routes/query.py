@@ -17,12 +17,14 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.deps import (
     get_current_user,
+    get_follow_up_resolver,
     get_pipeline,
     get_session_service,
 )
 from app.api.schemas.query import QueryRequest
 from app.api.schemas.session import SessionView
 from app.services.access_control import User
+from app.services.followup import FollowUpResolver
 from app.services.rag.pipeline import PipelineError, QueryResult, RAGPipeline
 from app.services.session import (
     SessionMessage,
@@ -40,15 +42,27 @@ async def query_documents(
     user: User = Depends(get_current_user),
     pipeline: RAGPipeline = Depends(get_pipeline),
     sessions: SessionStore = Depends(get_session_service),
+    follow_up: FollowUpResolver = Depends(get_follow_up_resolver),
 ) -> QueryResult:
     """Answer *question* using only documents the identified user may read.
 
-    The fresh, permission-filtered retrieval never consults another user's
-    stored context; the resulting answer is then logged to the shared session
-    for later, equally permission-filtered reads.
+    Deictic/elliptical follow-ups (roadmap §4) are rewritten into standalone
+    questions using only the requester's own prior questions in this session;
+    the original question the user typed is always what gets logged. The
+    fresh, permission-filtered retrieval never consults another user's stored
+    context; the resulting answer is then logged to the shared session for
+    later, equally permission-filtered reads.
     """
+    history = [
+        message
+        for message in sessions.get_or_create(payload.session_id).messages
+        if message.sender_user_id == user.user_id
+    ]
+    resolved = follow_up.resolve(payload.question, history, user_id=user.user_id)
+    question = resolved.rewritten
+
     try:
-        result = pipeline.query(payload.question, allowed_levels=sorted(user.allowed_tiers))
+        result = pipeline.query(question, allowed_levels=sorted(user.allowed_tiers))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except PipelineError as exc:

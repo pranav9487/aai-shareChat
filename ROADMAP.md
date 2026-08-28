@@ -27,11 +27,21 @@ ADR-0006.
 - [x] Track user identity for each relevant request.
 - [x] Prevent information retrieved for one user from automatically being exposed to another user.
 
-### 4. Implement Safe Follow-Up Handling
-- Detect follow-up questions.
-- Rewrite follow-up questions into standalone questions when required.
-- Perform retrieval according to the current user's access permissions.
-- Return a security-based response when information cannot be answered due to access restrictions.
+### 4. Implement Safe Follow-Up Handling — ✅ DONE (2026-08-27, branch `feature/follow-up-handling`)
+
+Implemented (ADR-0009): a `FollowUpResolver` protocol seam with a deterministic,
+offline `HeuristicFollowUpResolver`. Deictic/elliptical follow-ups ("what about
+part-time?" after a vacation question) are detected and rewritten into
+standalone questions by inlining **only the requester's own prior question**
+(defense-in-depth: the resolver filters by `user_id`, and the route passes
+only the caller's history). Rewritten questions still go through the normal
+permission-filtered retrieval, so a follow-up targeting restricted content
+returns the canonical security decline. The original question the user typed is
+always what's logged to the session.
+- [x] Detect follow-up questions.
+- [x] Rewrite follow-up questions into standalone questions when required.
+- [x] Perform retrieval according to the current user's access permissions.
+- [x] Return a security-based response when information cannot be answered due to access restrictions.
 
 ### 5. Move the vector store to Pinecone — ✅ DONE (2026-08-27, ADR-0007)
 Implemented: replaced ChromaDB with a hosted Pinecone (serverless, cosine)

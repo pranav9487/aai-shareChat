@@ -61,7 +61,10 @@ class SessionMessage:
             str(source.get("access_level")) for source in sources if source.get("access_level")
         )
         return cls(
-            message_id=uuid.uuid4().hex,
+            # Canonical hyphenated UUID so the value round-trips byte-for-byte
+            # through the Postgres ``uuid`` column (a plain hex string would be
+            # re-canonicalized on read, breaking store round-trip fidelity).
+            message_id=str(uuid.uuid4()),
             sender_user_id=sender_user_id,
             sender_role=sender_role,
             question=question,

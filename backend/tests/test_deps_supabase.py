@@ -18,7 +18,15 @@ from app.services.session.store_supabase import SupabaseSessionStore
 
 
 def _settings(**overrides: str) -> Settings:
-    base = {"chroma_persist_dir": "unused", "documents_dir": "unused"}
+    base = {
+        "chroma_persist_dir": "unused",
+        "documents_dir": "unused",
+        # Hermetic: explicitly blank Supabase so these tests never inherit the
+        # developer's .env (pydantic-settings merges file values for fields not
+        # passed as kwargs).
+        "supabase_url": "",
+        "supabase_service_key": "",
+    }
     base.update(overrides)
     return Settings(**base)
 

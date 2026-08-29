@@ -10,7 +10,7 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 
 import pytest
-from app.api.deps import get_pipeline, get_session_service, get_user_directory
+from app.api.deps import get_follow_up_resolver, get_pipeline, get_session_service, get_user_directory
 from app.main import app
 from app.services.access_control import InMemoryUserDirectory, Role, User
 from app.services.rag.pipeline import (
@@ -70,8 +70,25 @@ def directory() -> Iterator[InMemoryUserDirectory]:
 
 
 @pytest.fixture
+def heuristic_resolver() -> Iterator[None]:
+    """Force the deterministic heuristic resolver for test determinism.
+
+    Without this, tests that assert specific rewrite outputs would break
+    when GROQ_API_KEY is set (the real LLM produces different rewrites).
+    """
+    from app.services.followup.resolver import HeuristicFollowUpResolver
+
+    app.dependency_overrides[get_follow_up_resolver] = lambda: HeuristicFollowUpResolver()
+    yield
+    app.dependency_overrides.pop(get_follow_up_resolver, None)
+
+
+@pytest.fixture
 def client(
-    fake_pipeline: FakePipeline, sessions: InMemorySessionStore, directory: InMemoryUserDirectory
+    fake_pipeline: FakePipeline,
+    sessions: InMemorySessionStore,
+    directory: InMemoryUserDirectory,
+    heuristic_resolver: None,
 ) -> TestClient:
     return TestClient(app)
 
@@ -144,6 +161,27 @@ def test_follow_up_rewrite_still_honors_denial(
     assert response.status_code == 200
     assert response.json()["answer"] == ACCESS_DENIED_ANSWER
     assert response.json()["sources"] == []
+
+
+def test_history_cap_applied_at_route_level(
+    client: TestClient, fake_pipeline: FakePipeline
+) -> None:
+    """P16: only the last N (default 2) messages from the current user are
+    passed to the follow-up resolver, so old context doesn't accumulate."""
+    # Post 3 questions from the same user — exceeds the default cap of 2.
+    _post(client, question="First question about benefits")
+    _post(client, question="Second question about vacation policy")
+    _post(client, question="Third question about sick leave")
+
+    # Now a deictic follow-up: should only see turns 2 and 3 (the last 2).
+    _post(client, question="what about that?")
+
+    # The rewritten question should reference "Third question about sick leave"
+    # (the most recent), not "First question about benefits" (beyond the cap).
+    last_call = fake_pipeline.calls[-1][0]
+    assert "Third question about sick leave" in last_call
+    # "First question" should be beyond the 2-turn cap.
+    assert "First question about benefits" not in last_call
 
 
 def test_happy_path_forwards_caller_tiers(client: TestClient, fake_pipeline: FakePipeline) -> None:

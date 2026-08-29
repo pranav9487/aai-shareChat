@@ -7,7 +7,7 @@
 export function ChatWindow({ messages }) {
   return (
     <section className="panel chat-window" aria-label="Conversation">
-      <h2>2 · Ask the internal docs</h2>
+
       {messages.length === 0 ? (
         <p className="muted empty-hint">
           No messages yet. Try something inside your tier — e.g. “How many vacation days do we

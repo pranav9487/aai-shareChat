@@ -61,9 +61,29 @@ def get_pipeline() -> RAGPipeline:
 def get_follow_up_resolver() -> FollowUpResolver:
     """Shared follow-up resolver (ADR-0009).
 
-    Deterministic and offline today; tests override this dependency to assert
-    the route passes the right question to the pipeline.
+    Uses the LLM-based resolver for high-quality standalone rewriting when
+    ``GROQ_API_KEY`` is set; falls back to the deterministic heuristic
+    resolver otherwise (dev/test environments without network).
     """
+    settings = get_settings()
+    if (settings.groq_api_key or "").strip():
+        try:
+            from langchain_groq import ChatGroq
+
+            from app.services.followup.llm_resolver import (
+                LLMFollowUpResolver,
+                make_rewrite_fn,
+            )
+
+            llm = ChatGroq(
+                model=settings.groq_model,
+                api_key=settings.groq_api_key,
+                temperature=0,
+            )
+            chain = make_rewrite_fn(llm)
+            return LLMFollowUpResolver(rewrite_fn=chain)
+        except Exception:  # noqa: BLE001 — fall back to heuristic
+            pass
     return get_heuristic_resolver()
 
 

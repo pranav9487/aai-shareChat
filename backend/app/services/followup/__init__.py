@@ -6,10 +6,12 @@ from app.services.followup.resolver import (
     HeuristicFollowUpResolver,
     get_heuristic_resolver,
 )
+from app.services.followup.llm_resolver import LLMFollowUpResolver
 
 __all__ = [
     "ResolvedQuestion",
     "FollowUpResolver",
     "HeuristicFollowUpResolver",
+    "LLMFollowUpResolver",
     "get_heuristic_resolver",
 ]

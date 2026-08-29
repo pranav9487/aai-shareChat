@@ -15,7 +15,7 @@ export function SharedTranscript({ messages, onRefresh, disabled, loading }) {
   return (
     <section className="panel shared-transcript" aria-label="Shared session transcript">
       <div className="section-heading">
-        <h2>3 · Shared session transcript</h2>
+        <h2>Shared transcript</h2>
         <button type="button" onClick={onRefresh} disabled={disabled || loading}>
           {loading ? "Loading…" : "Refresh"}
         </button>

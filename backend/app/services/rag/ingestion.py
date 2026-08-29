@@ -27,9 +27,7 @@ class ParsedDocument:
 def chunk_text(text: str, *, chunk_size: int = 800, chunk_overlap: int = 100) -> list[str]:
     """Split *text* into overlapping chunks of at most ``chunk_size`` characters.
 
-    Chunk boundaries snap to the latest paragraph break (``\\n\\n``), sentence
-    end (``". "``) or space inside the window when one exists, falling back to
-    a hard cut. ``chunk_overlap`` guarantees consecutive chunks share content.
+    Uses LangChain's RecursiveCharacterTextSplitter for optimal semantic boundaries.
     """
     if chunk_size <= 0:
         raise ValueError(f"chunk_size must be positive, got {chunk_size}")
@@ -41,32 +39,16 @@ def chunk_text(text: str, *, chunk_size: int = 800, chunk_overlap: int = 100) ->
     cleaned = text.strip()
     if not cleaned:
         return []
-    if len(cleaned) <= chunk_size:
-        return [cleaned]
 
-    step = chunk_size - chunk_overlap
-    chunks: list[str] = []
-    start = 0
-    n = len(cleaned)
-    while start < n:
-        end = min(start + chunk_size, n)
-        if end < n:
-            window = cleaned[start:end]
-            for boundary in ("\n\n", ". ", " "):
-                idx = window.rfind(boundary)
-                # Only accept boundaries past half the window so chunks stay reasonably sized.
-                if idx > step // 2:
-                    end = start + idx + len(boundary)
-                    break
-        piece = cleaned[start:end].strip()
-        if piece:
-            chunks.append(piece)
-        if end >= n:
-            break
-        # Advance so the next window keeps exactly ``chunk_overlap`` characters
-        # of already-emitted content; the +1 floor guarantees termination.
-        start = max(end - chunk_overlap, start + 1)
-    return chunks
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len,
+    )
+
+    return splitter.split_text(cleaned)
 
 
 def parse_markdown_document(path: Path) -> ParsedDocument:

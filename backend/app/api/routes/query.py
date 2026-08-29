@@ -23,6 +23,7 @@ from app.api.deps import (
 )
 from app.api.schemas.query import QueryRequest
 from app.api.schemas.session import SessionView
+from app.config.settings import get_settings
 from app.services.access_control import User
 from app.services.followup import FollowUpResolver
 from app.services.rag.pipeline import PipelineError, QueryResult, RAGPipeline
@@ -53,12 +54,15 @@ async def query_documents(
     context; the resulting answer is then logged to the shared session for
     later, equally permission-filtered reads.
     """
-    history = [
+    own_history = [
         message
         for message in sessions.get_or_create(payload.session_id).messages
         if message.sender_user_id == user.user_id
     ]
-    resolved = follow_up.resolve(payload.question, history, user_id=user.user_id)
+    # P16: cap to the last N turns so follow-up detection uses limited context.
+    cap = get_settings().followup_history_cap
+    capped_history = own_history[-cap:] if cap > 0 else own_history
+    resolved = follow_up.resolve(payload.question, capped_history, user_id=user.user_id)
     question = resolved.rewritten
 
     try:

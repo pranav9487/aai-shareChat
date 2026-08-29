@@ -43,7 +43,8 @@ class Settings(BaseSettings):
     # --- Ingestion / retrieval tuning ---
     chunk_size: int = 800
     chunk_overlap: int = 100
-    retrieval_top_k: int = 5
+    retrieval_top_k: int = 10
+    followup_history_cap: int = 2
 
     # --- Access control (ADR-0004) ---
     # Optional JSON seed overriding the built-in demo user registry:

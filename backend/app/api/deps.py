@@ -36,7 +36,7 @@ def _build_pipeline(settings: Settings) -> RAGPipeline:
         region=settings.pinecone_region,
         dimension=settings.embedding_dim,
     )
-    retriever = Retriever(store, top_k=settings.retrieval_top_k)
+    retriever = Retriever(store, top_k=settings.retrieval_top_k, relevance_threshold=settings.relevance_threshold)
     try:
         generate = make_generate(settings=settings)
     except GenerationError as exc:

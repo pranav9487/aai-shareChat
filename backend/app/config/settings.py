@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     chunk_size: int = 800
     chunk_overlap: int = 100
     retrieval_top_k: int = 10
+    # Maximum cosine distance (1 - score) to consider a chunk relevant.
+    # Chunks with distance > this threshold are discarded before generation.
+    # 0.55 ≈ cosine score of 0.45 — a reasonable minimum for semantic relevance.
+    relevance_threshold: float = 0.55
     followup_history_cap: int = 2
 
     # --- Access control (ADR-0004) ---

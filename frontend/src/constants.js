@@ -22,14 +22,21 @@ export const DEMO_USERS = [
 export const ACCESS_DENIED_ANSWER =
   "Access denied: you do not have permission to view this information.";
 
-/** One session id per page visit; Supabase (roadmap Next-v2) will give it
- * real persistence semantics.
- * @returns {string} */
 export function makeSessionId() {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
+  const existing = localStorage.getItem("shared_session_id");
+  if (existing) {
+    return existing;
   }
-  return `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+  let sid;
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    sid = crypto.randomUUID();
+  } else {
+    sid = `sess-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+  
+  localStorage.setItem("shared_session_id", sid);
+  return sid;
 }
 
 let messageCounter = 0;

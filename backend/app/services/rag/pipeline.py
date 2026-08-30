@@ -70,5 +70,10 @@ class RAGPipeline:
         if not isinstance(answer, str) or not answer.strip():
             raise PipelineError("generator returned an empty or non-string answer")
 
+        if answer.strip() == NOT_FOUND_ANSWER and allowed_levels is not None:
+            unfiltered = self._retriever.retrieve(cleaned)
+            if any(c.metadata.get("access_level") not in allowed_levels for c in unfiltered):
+                return QueryResult(answer=ACCESS_DENIED_ANSWER, sources=[])
+
         sources = [dict(chunk.metadata) for chunk in chunks]
         return QueryResult(answer=answer.strip(), sources=sources)

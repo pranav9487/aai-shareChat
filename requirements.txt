@@ -1,6 +1,6 @@
 # Runtime dependencies (version ranges pinned per CI compatibility)
 fastapi>=0.115,<1
-uvicorn[standard]>=0.30,<1
+uvicorn[standard]>=0.52.4,<1
 langchain-core>=0.3,<0.5
 langchain-groq>=0.2,<0.5
 langchain-text-splitters>=0.3,<1

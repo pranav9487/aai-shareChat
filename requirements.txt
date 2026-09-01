@@ -13,5 +13,5 @@ pydantic-settings>=2.3,<3
 # Test / dev tooling (CI runs ruff, black and pytest from this single file)
 httpx>=0.27,<1
 pytest>=8.0,<9
-ruff>=0.6
+ruff>=0.16.5
 black>=24.8
